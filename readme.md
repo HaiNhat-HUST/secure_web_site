@@ -12,7 +12,7 @@
 
 # phase 2:  developemnt (about 4 week)
 
-1. nhat (web ui) 
+1. nhat
    1. fe
    2. be
 2. Linh
