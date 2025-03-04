@@ -1,4 +1,4 @@
-# phase 1: (Week 1) Rearch and design 
+# phase 1: Rearch and design
 
 - Use case and function requirement: Linh
   - usecase (diagram optional, list of functions is enough)
@@ -9,18 +9,17 @@
     - cau truc thu muc
     - route, chuc nang, middleware,.... (diagram optinal, text file is enough)
 
+-------------- weel 1 result---------
 
-# phase 2:  developemnt (about 4 week)
+use case
 
-1. nhat (web ui) 
-   1. fe
-   2. be
-2. Linh
-   1. fe
-   2. be
-3. Duy ha
-   1. fe
-   1. be
+ui
 
-# phase 3: testing, vulnerability check  and modification 
+
+tech stack 
+
+
+
+system architecture
+
 
