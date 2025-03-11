@@ -1,0 +1,45 @@
+📦 my-app
+├── 📂 client/                 # Frontend (React)
+│   ├── 📂 public/             # Chứa favicon, index.html
+│   ├── 📂 src/                # Code chính của frontend
+│   │   ├── 📂 assets/         # Chứa hình ảnh, CSS, fonts
+│   │   ├── 📂 components/     # Các component dùng chung
+│   │   ├── 📂 pages/          # Các trang chính (Home, About, Profile)
+│   │   ├── 📂 services/       # File gọi API (Axios, Fetch)
+│   │   ├── 📂 hooks/          # Custom React hooks
+│   │   ├── 📂 store/          # Redux store (nếu dùng Redux)
+│   │   ├── 📂 utils/          # Các hàm helper
+│   │   ├── App.js             # Component gốc
+│   │   ├── index.js           # Điểm khởi động React
+│   ├── package.json           # Dependencies frontend
+│   ├── vite.config.js         # Config Vite (hoặc webpack.config.js nếu dùng Webpack)
+│   ├── .env                   # Biến môi trường frontend
+│   ├── README.md              # Hướng dẫn frontend
+│
+├── 📂 server/                 # Backend (Node.js + Express)
+│   ├── 📂 src/                # Code chính của backend
+│   │   ├── 📂 config/         # Config database, env, JWT
+│   │   ├── 📂 controllers/    # Xử lý logic API
+│   │   ├── 📂 models/         # Mô hình database (Sequelize/Mongoose)
+│   │   ├── 📂 routes/         # Định nghĩa route API
+│   │   ├── 📂 middlewares/    # Middleware (auth, logging)
+│   │   ├── 📂 utils/          # Các hàm tiện ích
+│   │   ├── 📂 services/       # Logic nghiệp vụ (có thể tách riêng)
+│   │   ├── 📂 tests/          # Test API (Jest, Mocha)
+│   │   ├── index.js           # File chính để start server
+│   ├── package.json           # Dependencies backend
+│   ├── .env                   # Biến môi trường backend
+│   ├── nodemon.json           # Config nodemon (tự restart server khi thay đổi)
+│   ├── README.md              # Hướng dẫn backend
+│
+├── 📂 database/               # Chứa script SQL hoặc migration files
+│   ├── init.sql               # File khởi tạo database
+│
+├── 📂 docker/                 # Chứa file cấu hình Docker
+│   ├── Dockerfile             # Dockerfile cho backend
+│   ├── docker-compose.yml      # Cấu hình Docker Compose
+│
+├── .gitignore                 # Ignore files khi push lên GitHub
+├── README.md                  # Hướng dẫn tổng quan dự án
+├── package.json               # Dependencies chung (nếu dùng workspace)
+├── .env.example               # Template file biến môi trường
