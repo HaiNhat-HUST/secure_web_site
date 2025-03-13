@@ -1,0 +1,8 @@
+# 13/03/2025
+- tạo cấu trúc thư mục,
+
+
+- init react 
+    npx create-react-app frontend 
+    npm install react-router-dom
+    then use `npm start` to run the front end

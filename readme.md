@@ -34,3 +34,10 @@
 | 2022xxxx | Lê Hải Nhật |
 | 2022xxxx | Nguyễn Phương Linh |
 | 20225544  | Hạ Nhật Duy  |
+
+
+
+# tutorial
+## frontend
+1. create a react app -> `npx create-react-app frontend`
+2. 
