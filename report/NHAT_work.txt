@@ -1,6 +1,5 @@
 # 13/03/2025
-- tạo cấu trúc thư mục,
-
+- tạo cấu trúc thư mục
 
 - init react 
     npx create-react-app frontend 

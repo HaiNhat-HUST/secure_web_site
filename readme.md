@@ -1,6 +1,7 @@
 # Recruitment Management Web Application
 
 ## TODO
+
 ### Phase 1: Rearch and design
 
 - [ ] **`Usecase Diagram`**: Thiết kế usecase cho web app (hoặc đưa ra function requirement)
@@ -17,13 +18,13 @@
 ### Phase 2:  developemnt (about 4 week)
 
 1. nhat
-   1. fe
+   1. fe: dashboard
    2. be
 2. Linh
-   1. fe
+   1. fe: newfeed and postdetail
    2. be
 3. Duy ha
-   1. fe
+   1. fe: profile
    1. be
 
 ### Phase 3: testing, vulnerability check  and modification 

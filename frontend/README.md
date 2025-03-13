@@ -1,6 +1,5 @@
 
 # usage
-
 - use `npm start` to run the front end (be in the frontend folder)
 - access at http://localhost:3000
 
