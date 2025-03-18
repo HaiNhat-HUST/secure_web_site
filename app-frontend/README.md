@@ -1,3 +1,11 @@
+# Usage
+```bash
+# for running frontend
+npm run dev
+```
+Then access localhost:3000 
+
+# Folder Structure
 app-frontend/
 │── node_modules/                # Thư viện cài đặt từ npm
 │── public/                      # Chứa file tĩnh như favicon, ảnh, fonts, v.v.
