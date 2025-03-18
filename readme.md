@@ -18,7 +18,7 @@
 ### Phase 2:  developemnt (about 4 week)
 
 1. nhat
-   1. fe: dashboard
+   1. fe:dashboard 
    2. be
 2. Linh
    1. fe: newfeed and postdetail
