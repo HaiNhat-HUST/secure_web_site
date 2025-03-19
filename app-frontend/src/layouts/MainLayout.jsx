@@ -9,7 +9,7 @@ const MainLayout = () => {
       <Header />
 
       {/* Nội dung trang */}
-      <main className="flex-grow flex items-center justify-center">
+      <main className="">
         <Outlet />
       </main>
 
