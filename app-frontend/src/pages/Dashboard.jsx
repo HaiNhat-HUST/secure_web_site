@@ -1,4 +1,5 @@
 import { useState } from "react";
+import DashboardPostItem from "../components/DashboardPostItem";
 
 const posts = {
     1: { 
@@ -52,22 +53,14 @@ export default function Dashboard() {
                 </div>
                 
                 <ul className="space-y-3">
-                    {Object.keys(posts).map((id) => (
-                        <li 
-                            key={id} 
-                            className="cursor-pointer p-4 bg-white rounded-lg shadow-md hover:bg-gray-50 transition flex justify-between items-center border border-gray-200"
-                            onClick={() => setSelectedPost(posts[id])}
-                        >
-                            <div>
-                                <h1 className="text-lg font-bold text-gray-900">{posts[id].company}</h1>
-                                <h2 className="text-sm text-gray-600">{posts[id].title}</h2>
-                                <p className="text-xs text-blue-500 font-semibold">{posts[id].status}</p>
-                            </div>
-                            <div className="text-xs text-gray-500">
-                                {posts[id].postedTime}
-                            </div>
-                        </li>
-                    ))}
+                    
+                    <DashboardPostItem />
+                    <DashboardPostItem />
+                    <DashboardPostItem />
+                    <DashboardPostItem />
+                    <DashboardPostItem />
+                    <DashboardPostItem />
+
                 </ul>
             </div>
             
