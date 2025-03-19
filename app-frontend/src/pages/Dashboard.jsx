@@ -4,7 +4,7 @@ import DashboardPostItem from "../components/DashboardPostItem";
 const posts = {
     1: { 
         company: "Viettel", 
-        title: "Pentester", 
+        position: "Pentester", 
         postedTime: "2 days ago", 
         content: "Chi tiết công việc cho Pentester tại Viettel.",
         jobDescription: "Kiểm thử bảo mật hệ thống, phát hiện lỗ hổng.",
@@ -16,7 +16,7 @@ const posts = {
     },
     2: { 
         company: "VNPT", 
-        title: "Security Analyst", 
+        position: "Security Analyst", 
         postedTime: "1 week ago", 
         content: "VNPT đang tuyển Security Analyst với nhiều cơ hội hấp dẫn.",
         jobDescription: "Phân tích bảo mật, xử lý sự cố an ninh mạng.",
@@ -28,7 +28,7 @@ const posts = {
     },
     3: { 
         company: "FPT", 
-        title: "Red Team Specialist", 
+        position: "Red Team Specialist", 
         postedTime: "3 days ago", 
         content: "FPT cần tuyển Red Team Specialist để kiểm thử bảo mật hệ thống.",
         jobDescription: "Tấn công mô phỏng để đánh giá bảo mật hệ thống.",
@@ -45,7 +45,9 @@ export default function Dashboard() {
 
     return (
         <div className="flex h-screen bg-gray-100">
+
             {/* Sidebar Danh sách bài post */}
+            
             <div className="w-1/3 bg-white p-4 shadow-lg overflow-auto border-r border-gray-300">
                 <div className="flex space-x-4">
                     <h2 className="text-xl font-semibold mb-4 text-gray-800 underline">Apply jobs</h2>
@@ -53,14 +55,15 @@ export default function Dashboard() {
                 </div>
                 
                 <ul className="space-y-3">
-                    
-                    <DashboardPostItem />
-                    <DashboardPostItem />
-                    <DashboardPostItem />
-                    <DashboardPostItem />
-                    <DashboardPostItem />
-                    <DashboardPostItem />
-
+                    {Object.entries(posts).map(([id, post]) => (
+                        <DashboardPostItem 
+                        company={post.company} 
+                        position={post.position}
+                        statuss={post.status}
+                        postedTime={post.postedTime}
+                        onClick={() => setSelectedPost(post)}
+                        />
+                    ))}
                 </ul>
             </div>
             
@@ -68,7 +71,7 @@ export default function Dashboard() {
             <div className="w-2/3 p-6 flex flex-col ">
                 {selectedPost ? (
                     <div className="">
-                        <h1 className="text-2xl font-bold text-gray-900">{selectedPost.company} - {selectedPost.title}</h1>
+                        <h1 className="text-2xl font-bold text-gray-900">{selectedPost.company} - {selectedPost.position}</h1>
                         <p className="mt-4 text-gray-700 text-lg leading-relaxed">{selectedPost.content}</p>
                         <p className="mt-2 text-gray-700"><strong>Mô tả công việc:</strong> {selectedPost.jobDescription}</p>
                         <p className="mt-2 text-gray-700"><strong>Mức lương:</strong> {selectedPost.salary}</p>
@@ -83,7 +86,8 @@ export default function Dashboard() {
                         </div>
                     </div>
                 ) : (
-                    <h1 className="text-xl font-semibold text-gray-700">Chọn một bài viết để xem chi tiết</h1>
+                    <h1 className="text-xl font-semibold text-gray-700">Chọn một bài viết để xem chi tiếttt</h1>
+                    
                 )}
             </div>
         </div>
