@@ -1,6 +1,8 @@
 import { useState } from "react";
-import DashboardPostItem from "../components/DashboardPostItem";
+import DashboardPostItem from "../components/Dashboard/PostItem";
+import PostDetail from "../components/Dashboard/PostDetail";
 
+// về sau thay data bằng việc fetch dữ liệu từ api
 const appliedPosts = {
     1: {
         company: "Google",
@@ -63,7 +65,6 @@ const appliedPosts = {
         coverLetter: "https://example.com/cover_letter.pdf"
     }
 };
-
 const savedPosts = {
     1: {
         company: "Amazon",
@@ -129,7 +130,6 @@ const savedPosts = {
 
 
 export default function Dashboard() {
-
     const [selectedTab, setSelectedTab] = useState("applied")
     const [selectedPost, setSelectedPost] = useState(null);
 
@@ -137,9 +137,7 @@ export default function Dashboard() {
 
     return (
         <div className="flex h-screen bg-gray-100">
-
-            {/* Sidebar Danh sách bài post */}
-            
+            {/*Danh sách bài post */}
             <div className="w-1/3 bg-white p-4 shadow-lg overflow-auto border-r border-gray-300">
                 <div className="flex space-x-4 mb-4">
                     <button 
@@ -155,41 +153,37 @@ export default function Dashboard() {
                         Saved jobs
                     </button>
                 </div>
-                
+
+                {/* load từng bài post vào danh sách */}
                 <ul className="space-y-3">
                     {Object.entries(posts).map(([id, post]) => (
                         <DashboardPostItem 
                         company={post.company} 
                         position={post.position}
-                        statuss={post.status}
+                        status={post.status}
                         postedTime={post.postedTime}
                         onClick={() => setSelectedPost(post)}
                         />
                     ))}
                 </ul>
             </div>
-            
+
             {/* Nội dung bài post */}
             <div className="w-2/3 p-6 flex flex-col ">
                 {selectedPost ? (
-                    <div className="">
-                        <h1 className="text-2xl font-bold text-gray-900">{selectedPost.company} - {selectedPost.position}</h1>
-                        <p className="mt-4 text-gray-700 text-lg leading-relaxed">{selectedPost.content}</p>
-                        <p className="mt-2 text-gray-700"><strong>Mô tả công việc:</strong> {selectedPost.jobDescription}</p>
-                        <p className="mt-2 text-gray-700"><strong>Mức lương:</strong> {selectedPost.salary}</p>
-                        <p className="mt-2 text-gray-700"><strong>Yêu cầu:</strong> {selectedPost.requirements}</p>
-                        <p className="text-sm text-gray-500 mt-4">Đăng vào: {selectedPost.postedTime}</p>
-                        <p className="text-sm text-blue-500 font-semibold mt-2">Trạng thái: {selectedPost.status}</p>
-
-                        <div className="mt-4 flex space-x-4">
-                            <a href={selectedPost.cv} className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Xem CV</a>
-                            <a href={selectedPost.coverLetter} className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600">Xem Cover Letter</a>
-                            <button className="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600">Hủy Apply</button>
-                        </div>
-                    </div>
+                    <PostDetail 
+                        company={selectedPost.company}
+                        position={selectedPost.position}
+                        content={selectedPost.content}
+                        salary={selectedPost.salary}
+                        requirements={selectedPost.requirements}
+                        postedTime={selectedPost.postedTime}
+                        status={selectedPost.status}
+                        cv={selectedPost.cv}
+                        coverLetter={selectedPost.coverLetter}
+                    />
                 ) : (
-                    <h1 className="text-xl font-semibold text-gray-700">Chọn một bài viết để xem chi tiếttt</h1>
-                    
+                    <h1 className="text-xl font-semibold text-gray-700">Chọn một bài viết để xem chi tiết</h1>
                 )}
             </div>
         </div>
