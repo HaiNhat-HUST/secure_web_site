@@ -1,4 +1,9 @@
 # Recruitment Management Web Application
+# Usage
+run frontend:
+1. `cd app-frontend`
+2. `npm install`
+3. `npm run dev`
 
 ## TODO
 
