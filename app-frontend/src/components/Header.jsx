@@ -8,7 +8,7 @@ export default function Header() {
         <ul className="flex space-x-4">
           <li><Link to="/login" className="hover:text-gray-400">Login</Link></li>
           <li><Link to="/login" className="hover:text-gray-400">Jobs</Link></li>
-          <li><Link to="/login" className="hover:text-gray-400">Dashboard</Link></li>
+          <li><Link to="/dashboard" className="hover:text-gray-400">Dashboard</Link></li>
           <li><Link to="/login" className="hover:text-gray-400">My Profile</Link></li>
         </ul>
       </nav>

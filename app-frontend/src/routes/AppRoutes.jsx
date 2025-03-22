@@ -3,7 +3,7 @@ import Home from "../pages/Home";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import MainLayout from "../layouts/MainLayout";
-import Dashboard from "../pages/Dashboard";
+import Dashboard from "../pages/RecruiterDashboard";
 // import PrivateRoute from "../components/PrivateRoute";
 
 const AppRoutes = () => {

@@ -2,7 +2,8 @@ import { Link } from "react-router-dom";
 
 const Login = () => {
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md w-96">
+    <div className="flex h-screen justify-center items-center">
+      <div className="bg-white p-6 rounded-lg shadow-md w-96">
       <h2 className="text-2xl font-semibold text-center mb-4">Login</h2>
       <input
         type="email"
@@ -21,6 +22,8 @@ const Login = () => {
         Don't have an account? <Link to="/register" className="text-blue-600">Register</Link>
       </p>
     </div>
+    </div>
+    
   );
 };
 
