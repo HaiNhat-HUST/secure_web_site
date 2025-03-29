@@ -4,6 +4,7 @@ import Login from "../pages/Login";
 import Register from "../pages/Register";
 import MainLayout from "../layouts/MainLayout";
 import Dashboard from "../pages/RecruiterDashboard";
+import Profile from "../pages/Profile";
 // import PrivateRoute from "../components/PrivateRoute";
 
 const AppRoutes = () => {
@@ -17,6 +18,7 @@ const AppRoutes = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
+          <Route path="/profile" element={<Profile />} />
           
           <Route path="*" element={<Home />} />
         </Route>
