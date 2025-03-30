@@ -3,83 +3,114 @@ import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 
 const JobDetail = () => {
-  const { jobId } = useParams(); // Get jobId from the URL parameters
+  const { jobID } = useParams(); // Get jobID from URL params
   const [job, setJob] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // Fetch job details from API based on jobId
+  // Fetch job details from the backend based on jobID
   useEffect(() => {
-    axios
-      .get(`https://your-api-url.com/jobs/${jobId}`) // Replace with your actual API URL
-      .then((response) => {
+    const fetchJobDetails = async () => {
+      try {
+        const response = await axios.get(`/api/jobs/${jobID}`); // Backend API endpoint
         setJob(response.data);
         setLoading(false);
-      })
-      .catch((err) => {
+      } catch (err) {
         setError(err.message || 'Failed to fetch job details.');
         setLoading(false);
-      });
-  }, [jobId]);
+      }
+    };
+    fetchJobDetails();
+  }, [jobID]);
 
+  // Handle loading state
   if (loading) {
     return <p className="text-center text-lg">Loading job details...</p>;
   }
 
+  // Handle error state
   if (error) {
     return <p className="text-center text-lg text-red-500">Error: {error}</p>;
   }
 
+  // Handle missing job data
   if (!job) {
     return <p className="text-center text-lg text-red-500">Job not found.</p>;
   }
 
+  // Render job details
   return (
-    <div className="container mx-auto p-5">
-      <div className="bg-white p-8 rounded-lg shadow-lg">
-        <h2 className="text-4xl font-semibold text-center mb-4">{job.title}</h2>
-        <p className="text-lg mb-2">Company: {job.company}</p>
-        <p className="text-lg mb-2">Type: {job.type}</p>
-        <p className="text-lg mb-2">Location: {job.location}</p>
-        <p className="text-lg mb-4">Salary: ${job.salary}</p>
-        <p className="text-gray-700 mb-6">{job.description}</p>
+    <div className="container mx-auto py-8 px-4 lg:px-20">
+      <div className="bg-white p-10 rounded-lg shadow-md">
+        {/* Job Title */}
+        <h1 className="text-4xl font-bold text-center text-blue-700 mb-5">
+          {job.title}
+        </h1>
 
-        <div className="mb-8">
-          <h3 className="text-xl font-semibold mb-4">Submit CV & Apply</h3>
-          <input
-            type="file"
-            accept=".pdf,.doc,.docx"
-            className="px-4 py-2 border border-gray-300 rounded-md shadow-md mb-4 w-full"
-          />
-          <button className="px-6 py-2 bg-green-500 text-white rounded-md hover:bg-green-400 transition-colors">
-            Submit CV
-          </button>
-        </div>
-
-        <div className="social-share mb-8">
-          <h3 className="text-xl font-semibold mb-2">Share this job:</h3>
-          <div className="flex gap-4">
-            <a
-              href={`https://www.facebook.com/sharer/sharer.php?u=https://your-job-url.com/${job.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-500 transition-colors"
-            >
-              Share on Facebook
-            </a>
-            <a
-              href={`https://www.linkedin.com/shareArticle?url=https://your-job-url.com/${job.id}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="px-6 py-2 bg-blue-700 text-white rounded-md hover:bg-blue-600 transition-colors"
-            >
-              Share on LinkedIn
-            </a>
+        {/* Job Information */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-6">
+          <div>
+            <p className="text-lg font-medium">
+              <strong>Location:</strong> {job.location}
+            </p>
+            <p className="text-lg font-medium">
+              <strong>Posted By:</strong> {job.postedBy}
+            </p>
+            <p className="text-lg font-medium">
+              <strong>Date Posted:</strong> {new Date(job.postedDate).toLocaleDateString()}
+            </p>
           </div>
         </div>
 
-        <Link to="/" className="block text-center text-blue-600 hover:underline">
-          Go Back to Job Feed
+        {/* Job Description */}
+        <div className="mb-8">
+          <h3 className="text-2xl font-semibold text-gray-700 mb-4">Description</h3>
+          <p className="text-gray-600 leading-relaxed">{job.description}</p>
+        </div>
+
+        {/* Job Requirements */}
+        <div className="mb-8">
+          <h3 className="text-2xl font-semibold text-gray-700 mb-4">Requirements</h3>
+          <p className="text-gray-600 leading-relaxed">{job.requirements}</p>
+        </div>
+
+        <div className="mb-8">
+          <h3 className="text-2xl font-semibold text-gray-700 mb-4">Salary</h3>
+          <p className="text-gray-600 leading-relaxed">{job.salary}</p>
+        </div>
+
+        {/* Apply Section */}
+        <div className="bg-blue-50 p-6 rounded-lg mb-8">
+          <h3 className="text-xl font-semibold text-gray-800 mb-4">Ready to Apply?</h3>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              // Implement applyForJob logic here
+              alert('Your application has been submitted!');
+            }}
+            encType="multipart/form-data"
+          >
+            <input
+              type="file"
+              accept=".pdf,.doc,.docx"
+              className="w-full mb-4 p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              required
+            />
+            <button
+              type="submit"
+              className="w-full bg-green-500 text-white py-2 rounded-md hover:bg-green-600 transition-all"
+            >
+              Submit Your Application
+            </button>
+          </form>
+        </div>
+
+        {/* Back to Job Feed Link */}
+        <Link
+          to="/"
+          className="block text-center text-lg font-medium text-blue-600 hover:underline"
+        >
+          ← Back to Job Feed
         </Link>
       </div>
     </div>
