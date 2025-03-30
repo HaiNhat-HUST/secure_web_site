@@ -1,0 +1,204 @@
+1. JobPost Management
+1.1 GET /api/jobs
+•	Purpose: Fetch a list of all job postings.
+•	Query Parameters: search, location, datePosted (optional for filtering).
+•	Response: 
+•	[
+•	  {
+•	    "jobID": 1,
+•	    "title": "Software Engineer",
+•	    "location": "Hanoi",
+•	    "postedBy": "HRAdmin123",
+•	    "postedDate": "2025-03-28T09:00:00Z"
+•	  },
+•	  ...
+•	]
+1.2 GET /api/jobs/:jobID
+•	Purpose: Fetch detailed information about a specific job posting.
+•	Path Parameter: jobID.
+•	Response: 
+•	{
+•	  "jobID": 1,
+•	  "title": "Software Engineer",
+•	  "description": "Develop and maintain web applications.",
+•	  "requirements": "Proficient in JavaScript and React.",
+•	  "location": "Hanoi",
+•	  "postedBy": "HRAdmin123",
+•	  "postedDate": "2025-03-28T09:00:00Z"
+•	}
+1.3 POST /api/jobs
+•	Purpose: Create a new job posting (HR Admin only).
+•	Request Body: 
+•	{
+•	  "title": "Software Engineer",
+•	  "description": "Develop and maintain web applications.",
+•	  "requirements": "Proficient in JavaScript and React.",
+•	  "location": "Hanoi",
+•	  "postedBy": "HRAdmin123"
+•	}
+•	Response: 
+•	{
+•	  "message": "Job created successfully.",
+•	  "jobID": 1
+•	}
+1.4 PUT /api/jobs/:jobID
+•	Purpose: Update a specific job posting (HR Admin only).
+•	Request Body: (Include only fields to update.) 
+•	{
+•	  "title": "Updated Title"
+•	}
+•	Response: 
+•	{
+•	  "message": "Job updated successfully."
+•	}
+1.5 DELETE /api/jobs/:jobID
+•	Purpose: Remove a specific job posting (HR Admin only).
+•	Response: 
+•	{
+•	  "message": "Job deleted successfully."
+•	}
+________________________________________
+2. Candidate Management
+2.1 GET /api/candidates
+•	Purpose: Retrieve a list of candidates (Admin only).
+•	Response: 
+•	[
+•	  {
+•	    "candidateID": 1,
+•	    "name": "John Doe",
+•	    "email": "john@example.com",
+•	    "skills": ["JavaScript", "React"]
+•	  },
+•	  ...
+•	]
+2.2 GET /api/candidates/:candidateID
+•	Purpose: Fetch details of a specific candidate.
+•	Response: 
+•	{
+•	  "candidateID": 1,
+•	  "name": "John Doe",
+•	  "email": "john@example.com",
+•	  "phone": "1234567890",
+•	  "skills": ["JavaScript", "React"]
+•	}
+2.3 POST /api/candidates
+•	Purpose: Register a new candidate.
+•	Request Body: 
+•	{
+•	  "name": "John Doe",
+•	  "email": "john@example.com",
+•	  "phone": "1234567890",
+•	  "skills": ["JavaScript", "React"]
+•	}
+•	Response: 
+•	{
+•	  "message": "Candidate registered successfully.",
+•	  "candidateID": 1
+•	}
+2.4 DELETE /api/candidates/:candidateID
+•	Purpose: Delete a candidate (Admin only).
+•	Response: 
+•	{
+•	  "message": "Candidate deleted successfully."
+•	}
+________________________________________
+3. JobApplication Management
+3.1 GET /api/applications
+•	Purpose: Fetch a list of all job applications.
+•	Query Parameters: jobID, candidateID, status (optional for filtering).
+•	Response: 
+•	[
+•	  {
+•	    "applicationID": 1,
+•	    "jobID": 1,
+•	    "applicant": {
+•	      "candidateID": 1,
+•	      "name": "John Doe"
+•	    },
+•	    "resume": "resume123.pdf",
+•	    "status": "Pending"
+•	  },
+•	  ...
+•	]
+3.2 GET /api/applications/:applicationID
+•	Purpose: Fetch details of a specific job application.
+•	Response: 
+•	{
+•	  "applicationID": 1,
+•	  "jobID": 1,
+•	  "applicant": {
+•	    "candidateID": 1,
+•	    "name": "John Doe",
+•	    "email": "john@example.com"
+•	  },
+•	  "resume": "resume123.pdf",
+•	  "status": "Pending"
+•	}
+3.3 POST /api/applications
+•	Purpose: Submit a new job application.
+•	Request Body: 
+•	{
+•	  "jobID": 1,
+•	  "applicant": {
+•	    "candidateID": 1
+•	  },
+•	  "resume": "resume123.pdf",
+•	  "status": "Pending"
+•	}
+•	Response: 
+•	{
+•	  "message": "Application submitted successfully.",
+•	  "applicationID": 1
+•	}
+3.4 PUT /api/applications/:applicationID
+•	Purpose: Update the status of a job application (e.g., Admin reviewing).
+•	Request Body: 
+•	{
+•	  "status": "Reviewed"
+•	}
+•	Response: 
+•	{
+•	  "message": "Application status updated successfully."
+•	}
+3.5 DELETE /api/applications/:applicationID
+•	Purpose: Delete a job application (Admin only).
+•	Response: 
+•	{
+•	  "message": "Application deleted successfully."
+•	}
+________________________________________
+4. Authentication APIs
+4.1 POST /api/auth/register
+•	Purpose: Register a new user (HR Admin or Candidate).
+•	Request Body: 
+•	{
+•	  "username": "johndoe",
+•	  "password": "password123",
+•	  "email": "john@example.com",
+•	  "role": "Candidate"
+•	}
+•	Response: 
+•	{
+•	  "message": "User registered successfully."
+•	}
+4.2 POST /api/auth/login
+•	Purpose: Log in as an existing user.
+•	Request Body: 
+•	{
+•	  "email": "john@example.com",
+•	  "password": "password123"
+•	}
+•	Response: 
+•	{
+•	  "token": "JWT_TOKEN"
+•	}
+4.3 GET /api/auth/me
+•	Purpose: Fetch the current logged-in user’s details.
+•	Headers: Include Authorization: Bearer <JWT_TOKEN>.
+•	Response: 
+•	{
+•	  "userID": 1,
+•	  "username": "johndoe",
+•	  "role": "Candidate"
+•	}
+
