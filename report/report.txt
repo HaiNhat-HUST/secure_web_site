@@ -9,7 +9,7 @@
     - cau truc thu muc
     - route, chuc nang, middleware,.... (diagram optinal, text file is enough)
 
--------------- weel 1 result---------
+-------------- week 1 result---------
 
 use case
 
@@ -23,3 +23,62 @@ tech stack
 system architecture
 
 
+-----------week 2 result-----------
+
+class diagram: https://lucid.app/lucidchart/e68269bb-e013-4195-a664-0f00788cb82f/edit?viewport_loc=-11%2C-493%2C1891%2C954%2C0_0&invitationId=inv_58c5f2e1-94ea-4ec5-a802-d59881ce8717
+Main database schema: 
+```
+1. JobPost Model
+MongoDB Schema:
+const mongoose = require('mongoose');
+
+const JobPostSchema = new mongoose.Schema({
+  jobID: { type: Number, required: true, unique: true }, // Optimized with 'unique'
+  title: { type: String, required: true },
+  description: { type: String, required: true },
+  requirements: { type: String },
+  location: { type: String },
+  postedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'HRAdmin' }, // Reference to HRAdmin collection
+  postedDate: { type: Date, default: Date.now } // Default to current date
+});
+
+module.exports = mongoose.model('JobPost', JobPostSchema);
+________________________________________
+2. Candidate Model
+MongoDB Schema:
+const CandidateSchema = new mongoose.Schema({
+  candidateID: { type: Number, required: true, unique: true },
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  phone: { type: String, required: true },
+  skills: { type: [String] } // Optimized as an array of strings
+});
+
+module.exports = mongoose.model('Candidate', CandidateSchema);
+________________________________________
+3. JobApplication Model
+MongoDB Schema:
+const JobApplicationSchema = new mongoose.Schema({
+  applicationID: { type: Number, required: true, unique: true },
+  jobID: { type: mongoose.Schema.Types.ObjectId, ref: 'JobPost' }, // Reference to JobPost collection
+  applicant: { type: mongoose.Schema.Types.ObjectId, ref: 'Candidate' }, // Reference to Candidate collection
+  resume: { type: String, required: true }, // Store file paths or links to resumes
+  status: { type: String, required: true, enum: ['Pending', 'Reviewed', 'Accepted', 'Rejected'] } // Enum for status values
+});
+
+module.exports = mongoose.model('JobApplication', JobApplicationSchema);
+________________________________________
+4. User Model for Accounts
+MongoDB Schema:
+const User = new mongoose.Schema({
+  userID: { type: Number, required: true, unique: true },
+  username: { type: String, required: true, unique: true },
+  password: { type: String, required: true }, // Store hashed passwords for security
+  email: { type: String, required: true, unique: true },
+  role: { type: String, enum: ['HRAdmin', 'Candidate'], required: true } // Role determines access levels
+});
+
+module.exports = mongoose.model('User', UserSchema);
+
+
+```
