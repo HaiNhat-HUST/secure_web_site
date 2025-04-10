@@ -1,22 +1,21 @@
 const express = require('express');
 const router = express.Router();
-const {
-    getAllPosts,
-    getPostById,
-    getPostsByStatus,
-    getPostsByAuthor
-} = require('../controllers/postsController');
+const postsController = require('../controllers/postsController');
+// Apply authentication middleware to all routes
 
 // Get all posts
-router.get('/', getAllPosts);
+router.get('/', postsController.getAllPosts);
 
-// Get post by ID
-router.get('/:id', getPostById);
+// Get a single post
+router.get('/:id', postsController.getPostById);
 
-// Get posts by status
-router.get('/status/:status', getPostsByStatus);
+// Create a new post
+router.post('/', postsController.createPost);
 
-// Get posts by author
-router.get('/author/:authorId', getPostsByAuthor);
+// Update a post
+router.put('/:id', postsController.updatePost);
 
-module.exports = router;
+// Delete a post
+router.delete('/:id', postsController.deletePost);
+
+module.exports = router; 
