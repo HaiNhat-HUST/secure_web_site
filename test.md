@@ -7,6 +7,8 @@ THIS FILE GUIDE HOW TO TEST THE FULL STACK APPLICATION
   - see the docker file for configuration
 ## CONNECTION CHECK
 - `npm run test-db-connection`
+- `npm start` for testing api
+  - access `localhost:3000/api/posts` for test api
 # FRONT END (pending)
 - add to docker-compose.yml later 
 
