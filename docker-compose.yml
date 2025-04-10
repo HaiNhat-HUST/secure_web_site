@@ -1,13 +1,13 @@
-version: '3.8'
 
 services:
-  db:
+  database:
     image: postgres:15
-    container_name: postgres_db
-    restart: unless-stopped
+    container_name: web_postgres_db
+    restart: always
+    environment:
+      POSTGRES_USER: db_user
+      POSTGRES_PASSWORD: 123456
+      POSTGRES_DB: web_db
     ports:
       - "5432:5432"
-    environment:
-      POSTGRES_DB: employmee_db
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin
+

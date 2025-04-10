@@ -1,9 +1,5 @@
 # Database
 
-## Prerequisites
-
-- `docker-compose`
-
 ## Thiết lập database
 
 1.  **Kiểm tra file `docker-compose.yml`:**
@@ -29,6 +25,30 @@
         docker ps
         ```
     *   Bạn sẽ thấy một container có tên giống `rms_postgres_db` (hoặc tên bạn đặt trong `container_name` của file compose) với trạng thái `Up`.
+
+## Init Database với Migrations
+
+Bước này sẽ tạo cấu trúc bảng cần thiết (`users`, `job_postings`, `applications`, ...) trong database PostgreSQL vừa khởi chạy. Các định nghĩa bảng này nằm trong các file migration trong code dự án.
+
+1.  **Di chuyển vào thư mục Backend:**
+    ```bash
+    cd app-backend
+    ```
+
+2.  **Cài đặt Dependencies cho Backend:**
+    *   Lệnh này sẽ cài đặt Knex và các thư viện cần thiết khác được định nghĩa trong `package.json`.
+    ```bash
+    npm install
+    # Hoặc nếu dùng yarn:
+    # yarn install
+    ```
+
+3.  **Chạy Migrations:**
+    *   Lệnh này sẽ yêu cầu Knex kết nối đến database (đang chạy trong Docker) và thực thi tất cả các file migration chưa được chạy trong thư mục `database/migrations/`.
+    ```bash
+    npx knex migrate:latest
+    ```
+    *   **Kết quả mong đợi:** Bạn sẽ thấy output trong terminal cho biết các file migration (ví dụ: `..._initial_schema.js`) đang được chạy. Nếu không có lỗi, các bảng sẽ được tạo thành công trong database. Knex cũng sẽ tạo/cập nhật bảng `knex_migrations` để theo dõi.
 
 ## Kết nối đến Database 
 Bây giờ bạn có thể kết nối đến database PostgreSQL đang chạy trong container bằng công cụ GUI đã cài đặt (DBeaver/pgAdmin) để kiểm tra, chạy script SQL, hoặc xem dữ liệu.
