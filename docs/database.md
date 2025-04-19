@@ -75,3 +75,15 @@ Bây giờ bạn có thể kết nối đến database PostgreSQL đang chạy t
 5.  Nhấp vào nút "Test Connection ..." ở dưới cùng bên trái để kiểm tra. Nếu thành công, bạn sẽ thấy thông báo "Connected".
 6.  Nhấp "Finish".
 7.  Bạn sẽ thấy kết nối mới trong danh sách Database Navigator bên trái. Mở rộng nó để xem database và các schemas/tables (ban đầu có thể chưa có tables nếu chưa chạy migrations).
+
+## Dùng database trong project với Knex
+
+- Link cheatsheet: [Knex Cheatsheet](https://devhints.io/knex)
+
+1. Fill credential vào `app-backend\.env` theo setup trong `docker-compose.yml`
+2. Tương tác với DB thông qua Knex instance
+3. Viết và chạy file test (có thể tham khảo trong `app-backend\src\test\test_db.js`)
+
+```
+$ node src\test\test_db.js
+```
