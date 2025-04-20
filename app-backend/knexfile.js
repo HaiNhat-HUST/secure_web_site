@@ -42,7 +42,7 @@ module.exports = {
       directory: './database/migrations',
       tableName: 'knex_migrations'
     }
-    // seeds: { directory: './database/seeds' } // Thường không chạy seed ở staging/prod
+    
   },
 
   production: {
@@ -65,6 +65,6 @@ module.exports = {
       directory: './database/migrations',
       tableName: 'knex_migrations'
     }
-     // seeds: { directory: './database/seeds' } // Thường không chạy seed ở staging/prod
+     
   }
 };

@@ -3,9 +3,7 @@ const express = require('express');
 const session = require('express-session');
 const passport = require('passport');
 
-const sequelize = require('./config/db');
-const routes = require('./routes/index');
-const runAllSeeds = require('./seeds/index'); 
+const routes = require('./routes/indexRoutes');
 
 // Import passport configuration
 require('./config/passport');
