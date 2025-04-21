@@ -1,0 +1,7 @@
+[] simple oauth
+[] register with oauth add new user to db
+[]  
+
+[]role pick: sau khi đăng nhập lần đầu với oauth, redirect người dùng đến trang để pickrole và điền thêm một số thông tin khác
+[]
+[] middleware for authorization
