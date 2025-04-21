@@ -4,9 +4,14 @@ exports.up = async function(knex) {
     table.increments('user_id').primary();
     table.string('username', 255).notNullable().unique();
     table.string('email', 255).notNullable().unique();
-    table.string('password_hash', 255).notNullable();
+    table.string('password_hash', 255).nullable(); // Changed to nullable for OAuth users
     table.enu('role', ['JobSeeker', 'Recruiter', 'Administrator']).notNullable();
     table.boolean('is_active').notNullable().defaultTo(true);
+
+    // OAuth fields
+    table.string('google_id', 255).nullable().unique();
+    table.string('display_name', 255).nullable();
+    table.string('profile_picture', 2000).nullable();
 
     table.text('contact_details').nullable();
     table.specificType('skills', 'TEXT[]').nullable();
