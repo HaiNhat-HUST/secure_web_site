@@ -5,24 +5,35 @@ import Register from "../pages/Register";
 import MainLayout from "../layouts/MainLayout";
 import Dashboard from "../pages/RecruiterDashboard";
 import Profile from "../pages/Profile";
-// import PrivateRoute from "../components/PrivateRoute";
+import ProtectedRoute from "../components/ProtectedRoute";
+import { AuthProvider } from "../context/AuthContext";
+import AuthCallback from "../pages/AuthCallback";
 
 const AppRoutes = () => {
   return (
     <Router>
-      <Routes>
+      <AuthProvider>
+        <Routes>
+          {/* Public routes */}
+          <Route element={<MainLayout />}>
+            <Route path="/" element={<Home />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
+          </Route>
 
+          {/* Protected routes */}
+          <Route element={<MainLayout />}>
+            <Route element={<ProtectedRoute />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/profile" element={<Profile />} />
+            </Route>
+          </Route>
 
-        <Route element={<MainLayout />}>
-          <Route path="/" element={<Home />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
-          <Route path="/profile" element={<Profile />} />
-          
+          {/* Fallback route */}
           <Route path="*" element={<Home />} />
-        </Route>
-      </Routes>
+        </Routes>
+      </AuthProvider>
     </Router>
   );
 };
