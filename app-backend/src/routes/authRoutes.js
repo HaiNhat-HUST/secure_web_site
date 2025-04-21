@@ -1,6 +1,7 @@
 const express = require('express');
 const passport = require('passport');
 const authController = require('../controllers/authController');
+const { authenticateJWT } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
@@ -21,7 +22,10 @@ router.get('/google/callback',
 // Logout route
 router.get('/logout', authController.logout);
 
-// Get current user 
+// Get current user (using JWT token)
+router.get('/user', authenticateJWT, authController.getCurrentUser);
+
+// Get current user (using session - backward compatibility)
 router.get('/me', authController.getCurrentUser);
 
 module.exports = router; 
