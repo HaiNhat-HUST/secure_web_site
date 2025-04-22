@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const UserModel = require('../models/userModel');
-
+const { hashPassword, verifyPassword } = require('../utils/passwordUtils')
 // Helper to generate JWT
 const generateToken = (user) => {
   return jwt.sign(
@@ -15,7 +15,91 @@ const generateToken = (user) => {
 };
 
 module.exports = {
-  // Handle successful Google authentication
+  register: async (req, res) => {
+    try {
+      const {username, email, password, role = 'JobSeeker'} = req.body;
+
+      if (!username || !email || !password) {
+        return res.status(400).json({message: 'Username, email and password are required' });
+      }
+
+      const existingUserByEmail = await UserModel.findByEmail(email);
+      if (existingUserByEmail) {
+        return res.status(400).json({message: 'Email already in use'});
+      }
+
+      const existingUserByUsername = await UserModel.findByUsername(username);
+      if (existingUserByUsername) {
+        return res.status(400).json({message: 'Username already in use'});
+      }
+
+      const passwordHash = await hashPassword(password);
+
+      const userData = {
+        username,
+        email,
+        password_hash: passwordHash,
+        role,
+        created_at: new Date(),
+        updated_at: new Date(),
+      };
+
+      const user = await UserModel.create(userData);
+
+      const token = generateToken(user);
+
+      const {password_hash, ...userWithoutPassword} = user;
+
+      return res.status(201).json({
+        user: userWithoutPassword,
+        token
+      });
+
+    } catch (error) {
+      console.log('Register error:', error);
+      return res.status(500).json({ message: 'Server error during registration'});
+    }
+  },
+
+  login: async (req,res) => {
+    try {
+      const { identifier, password }= req.body;
+
+      if (!identifier || !password) {
+        return res.status(400).json({message: 'Email/username and password are required' });
+      }
+
+      let user = await UserModel.findByEmail(identifier);
+      if (!user) {
+        user = await UserModel.findByUsername(identifier);
+      }
+
+      if (!user) {
+        return res.status(401).json({message: 'Invalid credentials' });
+      }
+
+      if (!user.password_hash) {
+        return res.status(401).json({
+          message: 'This account was created with Google OAuth. Please log in with Google.'
+        });
+      }
+
+      const token = generateToken(user);
+
+      const {password_hash, ...userWithoutPassword} = user;
+
+      return res.status(200).json({
+        user: userWithoutPassword,
+        token
+      });
+
+    } catch (error) {
+      console.log('Login error: ', error);
+      return res.status(500).json({message: 'Server error during login'});
+    }
+  },
+
+// Handle successful Google authentication
   googleCallback: (req, res) => {
     try {
       // Create JWT token
@@ -30,7 +114,7 @@ module.exports = {
     }
   },
 
-  // Handle logout
+// Handle logout
   logout: (req, res) => {
     req.logout(function(err) {
       if (err) { return next(err); }
@@ -58,4 +142,6 @@ module.exports = {
       return res.status(500).json({ message: 'Server error' });
     }
   }
-}; 
+  
+}
+

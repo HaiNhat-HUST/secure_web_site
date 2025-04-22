@@ -5,6 +5,11 @@ const { authenticateJWT } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
+// Authentication
+
+router.post('/register', authController.register);
+router.post('/login', authController.login)
+
 // Google OAuth routes
 router.get(
   '/google',
