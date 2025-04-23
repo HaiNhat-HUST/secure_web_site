@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
@@ -15,12 +15,18 @@ const Login = () => {
     setError("");
     setLoading(true);
 
+    if (!identifier || !password) {
+      setError("Email/username and password are required");
+      setLoading(false);
+      return;
+    }
+
     try {
-      const result = await login(email, password);
+      const result = await login(identifier, password);
       if (result.success) {
         navigate("/dashboard");
       } else {
-        setError("Failed to log in. Please check your credentials.");
+        setError(result.error || "Failed to log in. Please check your credentials.");
       }
     } catch (err) {
       setError("An error occurred during login.");
@@ -35,9 +41,9 @@ const Login = () => {
   };
 
   return (
-    <div className="flex h-screen justify-center items-center">
-      <div className="bg-white p-6 rounded-lg shadow-md w-96">
-        <h2 className="text-2xl font-semibold text-center mb-4">Login</h2>
+    <div className="flex min-h-screen justify-center items-center py-12">
+      <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+        <h2 className="text-2xl font-semibold text-center mb-6">Login</h2>
         
         {error && (
           <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4">
@@ -46,26 +52,34 @@ const Login = () => {
         )}
         
         <form onSubmit={handleSubmit}>
-          <input
-            type="email"
-            placeholder="Email"
-            className="w-full p-2 border rounded mb-3"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-          />
-          <input
-            type="password"
-            placeholder="Password"
-            className="w-full p-2 border rounded mb-3"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <div className="mb-4">
+            <label htmlFor="identifier" className="block text-sm font-medium text-gray-700 mb-1">Email or Username</label>
+            <input
+              id="identifier"
+              type="text"
+              className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              required
+            />
+          </div>
+          
+          <div className="mb-6">
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Password</label>
+            <input
+              id="password"
+              type="password"
+              className="w-full p-2 border rounded focus:ring-blue-500 focus:border-blue-500"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+          </div>
+          
           <button 
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 disabled:bg-blue-300 mb-3"
+            className="w-full bg-blue-600 text-white p-2 rounded hover:bg-blue-700 disabled:bg-blue-300 mb-4"
           >
             {loading ? "Logging in..." : "Login"}
           </button>
@@ -92,11 +106,11 @@ const Login = () => {
               <path fill="#EA4335" d="M -14.754 43.989 C -12.984 43.989 -11.404 44.599 -10.154 45.789 L -6.734 42.369 C -8.804 40.429 -11.514 39.239 -14.754 39.239 C -19.444 39.239 -23.494 41.939 -25.464 45.859 L -21.484 48.949 C -20.534 46.099 -17.884 43.989 -14.754 43.989 Z" />
             </g>
           </svg>
-          Google
+          Login with Google
         </button>
         
-        <p className="text-center mt-4">
-          Don't have an account? <Link to="/register" className="text-blue-600">Register</Link>
+        <p className="text-center mt-6 text-sm text-gray-600">
+          Don't have an account? <Link to="/register" className="text-blue-600 hover:text-blue-800">Register</Link>
         </p>
       </div>
     </div>
