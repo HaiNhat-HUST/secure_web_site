@@ -1,6 +1,8 @@
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const LocalStrategy = require('passport-local').Strategy
 const UserModel = require('../models/userModel');
+const { verify } = require('jsonwebtoken');
 
 passport.serializeUser((user, done) => {
   done(null, user.user_id);
@@ -14,6 +16,46 @@ passport.deserializeUser(async (id, done) => {
     done(error, null);
   }
 });
+
+
+passport.use(
+  new LocalStrategy(
+    {
+      usernameField: 'identifier',
+      passwordField: 'password'
+    },
+
+    async (escapeIdentifier, password, done) => {
+      try {
+
+        let user = await UserModel.findByEmail(identifier);
+
+        if (!user) {
+          await UserModel.findByUsername(identifier);
+        }
+        
+        if (!user) {
+          return done(null, false, {message: 'Invalid credentials'})
+        }
+
+        if (!user.password_hash) {
+          return done(null, false, {
+            message: 'This account was created with Google OAuth. Please log in with Goole.'
+          });
+        }
+
+        const isPasswordValid = await verifyPassword(password, user.password_hash);
+        if (!isPasswordValid) {
+          return done(null, false, {message: 'VAlid credentails'});
+        }
+
+        return done(null,user);
+      } catch(error) {
+        return done(error, false);
+      }
+    }
+  )
+)
 
 passport.use(
   new GoogleStrategy(

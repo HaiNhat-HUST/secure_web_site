@@ -1,7 +1,10 @@
-[] simple oauth
-[] register with oauth add new user to db
-[]  
+[done]        simple oauth 
+[done]        oauthentication (null password) -> only possible to login with google
+[done]        add new user to database
 
-[]role pick: sau khi đăng nhập lần đầu với oauth, redirect người dùng đến trang để pickrole và điền thêm một số thông tin khác
-[]
-[] middleware for authorization
+[pending]     role pick: sau khi đăng nhập lần đầu với oauth, redirect người dùng đến trang để pickrole và điền thêm một số thông tin khác
+[pending]     middleware for role base
+[pending]     middleware for vefiry jwt
+[pending]     finetune
+[pending]     verify email 
+[pending]     change password
