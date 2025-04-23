@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const UserModel = require('../models/userModel');
-const { hashPassword, verifyPassword } = require('../utils/passwordUtils')
+const { hassPassword, verifyPassword } = require('../utils/passwordUtils')
 // Helper to generate JWT
 const generateToken = (user) => {
   return jwt.sign(
@@ -33,7 +33,7 @@ module.exports = {
         return res.status(400).json({message: 'Username already in use'});
       }
 
-      const passwordHash = await hashPassword(password);
+      const passwordHash = await hassPassword(password);
 
       const userData = {
         username,
@@ -84,6 +84,10 @@ module.exports = {
         });
       }
 
+      const validPassword = await verifyPassword(password, user.password_hash)
+      if (!validPassword) {
+        return res.status(401).json({message: "Invalid credentials"})
+      }
       const token = generateToken(user);
 
       const {password_hash, ...userWithoutPassword} = user;
