@@ -1,10 +1,22 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './styles/index.css'
-import App from './App.jsx'
+// src/main.jsx
+import React, { StrictMode } from 'react'; // Import React nếu chưa có
+import { createRoot } from 'react-dom/client';
+import { BrowserRouter } from 'react-router-dom'; // Import BrowserRouter
+import { AuthProvider } from './context/AuthContext'; // Import AuthProvider
+import AppRoutes from './routes/AppRoutes'; // Import AppRoutes
+import './styles/index.css';
 
-createRoot(document.getElementById('root')).render(
+// Lấy root element
+const rootElement = document.getElementById('root');
+const root = createRoot(rootElement);
+
+// Render ứng dụng
+root.render(
   <StrictMode>
-    <App />
-  </StrictMode>,
-)
+    <BrowserRouter> {/* Bọc toàn bộ ứng dụng trong BrowserRouter */}
+      <AuthProvider> {/* Bọc AppRoutes trong AuthProvider */}
+        <AppRoutes /> {/* Render trực tiếp AppRoutes */}
+      </AuthProvider>
+    </BrowserRouter>
+  </StrictMode>
+);

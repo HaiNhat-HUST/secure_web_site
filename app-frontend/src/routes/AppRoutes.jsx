@@ -1,40 +1,44 @@
-import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+// src/routes/AppRoutes.jsx 
+
+import { Routes, Route } from "react-router-dom";
 import Home from "../pages/Home";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import MainLayout from "../layouts/MainLayout";
 import Dashboard from "../pages/RecruiterDashboard";
-import Profile from "../pages/Profile";
+import Profile from "../pages/Profile"; // Giả sử đây là trang Profile chính
 import ProtectedRoute from "../components/ProtectedRoute";
-import { AuthProvider } from "../context/AuthContext";
 import AuthCallback from "../pages/AuthCallback";
 
 const AppRoutes = () => {
   return (
-    <Router>
-      <AuthProvider>
-        <Routes>
-          {/* Public routes */}
-          <Route element={<MainLayout />}>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/auth/callback" element={<AuthCallback />} />
-          </Route>
+    // KHÔNG CÓ <Router> và <AuthProvider> ở đây
+    <Routes>
+      {/* Public routes */}
 
-          {/* Protected routes */}
-          <Route element={<MainLayout />}>
-            <Route element={<ProtectedRoute />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/profile" element={<Profile />} />
-            </Route>
-          </Route>
+      <Route element={<MainLayout />}> {/* Layout cho các trang public/chung */}
+        <Route path="/" element={<Home />} />
+        {/* Có thể cần AuthLayout riêng cho Login/Register */}
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
+      </Route>
 
-          {/* Fallback route */}
-          <Route path="*" element={<Home />} />
-        </Routes>
-      </AuthProvider>
-    </Router>
+      {/* Protected routes */}
+
+      <Route element={<MainLayout />}>
+        {/* ProtectedRoute bao bọc các route cần đăng nhập */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          {/* Trang Profile của người dùng hiện tại */}
+          <Route path="/profile" element={<Profile />} />
+        </Route>
+      </Route>
+
+      {/* Fallback route - Nên hiển thị trang 404 Not Found */}
+      {/* <Route path="*" element={<NotFoundPage />} /> */}
+      <Route path="*" element={<Home />} /> {/* Tạm thời về Home */}
+    </Routes>
   );
 };
 

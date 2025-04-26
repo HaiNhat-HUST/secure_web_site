@@ -1,6 +1,7 @@
 // src/routes/profileRoutes.js
 const express = require('express');
 const profileController = require('../controllers/profileController');
+const { authenticateJWT } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
@@ -14,14 +15,15 @@ const router = express.Router();
 
 router.get(
   '/:userId',
+  authenticateJWT,
   profileController.getUserProfile
 );
 
-router.put(
-    '/:userId',
-    verifyToken, // Yêu cầu đăng nhập
-    profileController.updateUserProfile // Gọi hàm controller xử lý update
-);
+// router.put(
+//   '/:userId',
+//   authenticateJWT, // Yêu cầu đăng nhập
+//   profileController.updateUserProfile // Gọi hàm controller xử lý update
+// );
 
 // Ví dụ route chỉ dành cho Recruiter
 // const { hasRole } = require('../middleware/auth.middleware');
