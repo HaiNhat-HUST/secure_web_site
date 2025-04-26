@@ -8,6 +8,9 @@ const passport = require('./config/passport');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
+const jobRoutes = require('./routes/jobRoutes');
+const meowRoutes = require('./routes/meowRoutes');
+// const recruiterRoutes = require('./routes/recruiterRoutes');
 
 const app = express();
 
@@ -40,7 +43,9 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Routes
+
 app.use('/auth', authRoutes);
+app.use('/api/jobs', jobRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {
