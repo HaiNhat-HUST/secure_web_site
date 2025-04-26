@@ -8,6 +8,9 @@ const passport = require('./config/passport');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
+const profileRoutes = require('./routes/profileRoutes'); // Import router profile/user
+// const jobRoutes = require('./routes/job.routes'); // Ví dụ các router khác
+// const applicationRoutes = require('./routes/application.routes'); // Ví dụ
 
 const app = express();
 
@@ -18,6 +21,8 @@ app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
 // CORS setup
+// Kiểm tra biến môi trường trước khi split
+const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS ? process.env.CORS_ALLOWED_ORIGINS.split(',') : '*'; // Cho phép tất cả nếu không có biến env
 app.use(cors({
   origin: process.env.CORS_ALLOWED_ORIGINS.split(','),
   credentials: true
@@ -40,11 +45,19 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Routes
+const API_PREFIX = '/api';
+
 app.use('/auth', authRoutes);
+
+app.use(`${API_PREFIX}/profile`, profileRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {
   res.status(200).json({ status: 'ok', timestamp: new Date() });
+});
+
+app.get(API_PREFIX, (req, res) => {
+  res.json({ message: 'Welcome to RMS API v1' });
 });
 
 // Error handling middleware
