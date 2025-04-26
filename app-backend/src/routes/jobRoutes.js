@@ -4,11 +4,6 @@ const jobController = require('../controllers/ManageJobPostingController');
 
 const router = express.Router();
 
-// --- Public Test Route ---
-router.get('/cat', (req, res) => {
-  res.status(200).json({ message: 'meowmeowmeow - job routes are up!' });
-});
-
 
 // POST /api/jobs - Create a new job posting
 router.post('/jobs', jobController.createJob);
