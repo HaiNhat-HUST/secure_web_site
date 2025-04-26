@@ -41,7 +41,13 @@ const Login = () => {
   };
 
   return (
-    <div className="flex min-h-screen justify-center items-center py-12">
+    <div 
+    className="flex min-h-screen justify-center items-center py-12" 
+    style={{
+      backgroundImage: `url(../../assets/images/login-bg.jpg)`,
+      backgroundSize: 'cover',
+      backgroundRepeat: 'no-repeat',
+    }}>
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
         <h2 className="text-2xl font-semibold text-center mb-6">Login</h2>
         
