@@ -101,9 +101,7 @@ Nhìn chung thì phần dữ liệu JSON có gì sẽ do các attributes của t
     "title": "string",
     "description": "string",
     "location": "string",
-    "requirements":"string",
     "type": "string", 
-    "salary": "string"
   }
   ```
 - **Response**:
@@ -131,7 +129,6 @@ Nhìn chung thì phần dữ liệu JSON có gì sẽ do các attributes của t
     "description": "string",
     "location": "string",
     "type": "string",
-    "salary": "string"
   }
   ```
 - **Response**:
