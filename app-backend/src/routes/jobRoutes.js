@@ -1,6 +1,6 @@
 // routes/jobRoutes.js
 const express = require('express');
-const jobController = require('../controllers/jobController');
+const jobController = require('../controllers/ManageJobPostingController');
 
 const router = express.Router();
 
