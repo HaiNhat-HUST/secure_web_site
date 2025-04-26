@@ -34,8 +34,6 @@ export const AuthProvider = ({ children }) => {
     }
   }, []);
 
-
-  // for profile ??? : Nhat:Nhat
   const fetchCurrentUser = async (authToken) => {
     try {
       setLoading(true);
@@ -44,7 +42,8 @@ export const AuthProvider = ({ children }) => {
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${authToken}`
-        }
+        },
+        credentials: 'include'
       });
 
       if (response.ok) {
@@ -62,25 +61,26 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const login = async (email, password) => {
+  const login = async (identifier, password) => {
     try {
       setLoading(true);
       const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
+        body: JSON.stringify({ identifier, password }),
+        credentials: 'include'
       });
 
       if (!response.ok) {
-        throw new Error('Login failed');
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Login failed');
       }
 
       const data = await response.json();
       localStorage.setItem('token', data.token);
       setToken(data.token);
-      await fetchCurrentUser(data.token);
-      navigate('/dashboard');
-      return { success: true };
+      setCurrentUser(data.user);
+      return { success: true, user: data.user };
     } catch (error) {
       console.error('Login error:', error);
       return { success: false, error: error.message };
@@ -89,11 +89,50 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    setToken(null);
-    setCurrentUser(null);
-    navigate('/login');
+  const register = async (userData) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/register`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(userData),
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Registration failed');
+      }
+
+      const data = await response.json();
+      localStorage.setItem('token', data.token);
+      setToken(data.token);
+      setCurrentUser(data.user);
+      return { success: true, user: data.user };
+    } catch (error) {
+      console.error('Registration error:', error);
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const logout = async () => {
+    try {
+      // Call the backend logout endpoint
+      await fetch(`${import.meta.env.VITE_API_URL}/auth/logout`, {
+        method: 'GET',
+        credentials: 'include'
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+    } finally {
+      // Clear local storage and state regardless of server response
+      localStorage.removeItem('token');
+      setToken(null);
+      setCurrentUser(null);
+      navigate('/login');
+    }
   };
 
   const loginWithGoogle = () => {
@@ -106,6 +145,7 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     logout,
+    register,
     loginWithGoogle,
     isAuthenticated: !!currentUser
   };
