@@ -149,7 +149,8 @@ export const AuthProvider = ({ children }) => {
     logout,
     register,
     loginWithGoogle,
-    isAuthenticated: !!currentUser
+    isAuthenticated: !!currentUser,
+    setCurrentUser
   };
 
   return (

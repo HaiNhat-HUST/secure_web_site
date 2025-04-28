@@ -46,97 +46,95 @@ module.exports = {
     }
   },
 
-  // // --- Hàm updateProfile (cũng gọi model trực tiếp) ---
-  //  async updateUserProfile(req, res, next) {
-  //   try {
-  //     const userIdToUpdate = parseInt(req.params.userId, 10);
-  //     const updateData = req.body;
-  //     const loggedInUser = req.user; // { userId, role } từ verifyToken
+  // --- Hàm updateProfile (cũng gọi model trực tiếp) ---
+   async updateUserProfile(req, res, next) {
+    try {
+      const userIdToUpdate = parseInt(req.params.userId, 10);
+      const updateData = req.body;
+      const loggedInUser = req.user; // { userId, role } từ verifyToken
+      console.log('Get user from request: ', loggedInUser);
 
-  //     // ---- LOGIC NGHIỆP VỤ (TRỰC TIẾP TRONG CONTROLLER) ----
+      // ---- LOGIC NGHIỆP VỤ (TRỰC TIẾP TRONG CONTROLLER) ----
 
-  //     // 1. Kiểm tra quyền sở hữu (CỰC KỲ QUAN TRỌNG)
-  //     if (!loggedInUser || loggedInUser.userId !== userIdToUpdate) {
-  //       console.warn(`Forbidden attempt: User ${loggedInUser?.userId} trying to update profile ${userIdToUpdate}`);
-  //       // Nếu dùng AppError: throw new AppError('Forbidden: You can only update your own profile', 403);
-  //       return res.status(403).json({ message: 'Forbidden: You can only update your own profile' });
-  //     }
+      // 1. Kiểm tra quyền sở hữu (CỰC KỲ QUAN TRỌNG)
+      if (!loggedInUser || loggedInUser.user_id !== userIdToUpdate) {
+        console.warn(`Forbidden attempt: User ${loggedInUser?.user_id} trying to update profile ${userIdToUpdate}`);
+        return res.status(403).json({ message: 'Forbidden: You can only update your own profile' });
+      }
 
-  //     // 2. Kiểm tra dữ liệu đầu vào cơ bản
-  //     if (!updateData || Object.keys(updateData).length === 0) {
-  //        // Nếu dùng AppError: throw new AppError('No update data provided', 400);
-  //        return res.status(400).json({ message: 'No update data provided' });
-  //     }
+      // 2. Kiểm tra dữ liệu đầu vào cơ bản
+      if (!updateData || Object.keys(updateData).length === 0) {
+         return res.status(400).json({ message: 'No update data provided' });
+      }
 
-  //     // 3. Lọc các trường được phép cập nhật dựa trên role (Logic này giờ nằm ở đây)
-  //     const allowedFields = {
-  //       JobSeeker: ['username', 'email', 'contact_details', 'skills', 'resume_data'],
-  //       Recruiter: ['username', 'email', 'contact_details', 'department'],
-  //       Administrator: ['username', 'email', 'contact_details', 'skills', 'resume_data', 'department', 'is_active', 'role']
-  //     };
-  //     const allowed = allowedFields[loggedInUser.role] || [];
-  //     const filteredDataForDb = {}; // Dùng snake_case cho DB
+      // 3. Lọc các trường được phép cập nhật dựa trên role (Logic này giờ nằm ở đây)
+      const allowedFields = {
+        JobSeeker: ['display_name', 'contact_details', 'resume_data'],
+        Recruiter: ['display_name', 'contact_details'],
+      };
+      const allowed = allowedFields[loggedInUser.role] || [];
+      const filteredDataForDb = {}; // Dùng snake_case cho DB
 
-  //     for (const key in updateData) {
-  //        // Giả sử bạn cần chuyển đổi camelCase (vd: contactDetails) sang snake_case (contact_details)
-  //        // Bạn cần một hàm helper hoặc thư viện (lodash.snakeCase)
-  //        // const snakeKey = convertToSnakeCase(key); // Tự viết hoặc dùng thư viện
-  //        const snakeKey = key; // TẠM THỜI GIẢ SỬ INPUT ĐÃ LÀ SNAKE_CASE
+      for (const key in updateData) {
+         // Giả sử bạn cần chuyển đổi camelCase (vd: contactDetails) sang snake_case (contact_details)
+         // Bạn cần một hàm helper hoặc thư viện (lodash.snakeCase)
+         // const snakeKey = convertToSnakeCase(key); // Tự viết hoặc dùng thư viện
+         const snakeKey = key; // TẠM THỜI GIẢ SỬ INPUT ĐÃ LÀ SNAKE_CASE
 
-  //        if (allowed.includes(snakeKey)) {
-  //          filteredDataForDb[snakeKey] = updateData[key];
-  //        } else {
-  //          console.warn(`User role ${loggedInUser.role} attempted to update forbidden field: ${key} (as ${snakeKey})`);
-  //        }
-  //     }
+         if (allowed.includes(snakeKey)) {
+           filteredDataForDb[snakeKey] = updateData[key];
+         } else {
+           console.warn(`User role ${loggedInUser.role} attempted to update forbidden field: ${key} (as ${snakeKey})`);
+         }
+      }
 
-  //     if (Object.keys(filteredDataForDb).length === 0) {
-  //       // Nếu dùng AppError: throw new AppError('No valid fields to update for your role or data provided', 400);
-  //       return res.status(400).json({ message: 'No valid fields to update for your role or data provided'});
-  //     }
+      if (Object.keys(filteredDataForDb).length === 0) {
+        // Nếu dùng AppError: throw new AppError('No valid fields to update for your role or data provided', 400);
+        return res.status(400).json({ message: 'No valid fields to update for your role or data provided'});
+      }
 
-  //     // ---- HẾT LOGIC NGHIỆP VỤ ----
+      // ---- HẾT LOGIC NGHIỆP VỤ ----
 
 
-  //     // 4. Gọi trực tiếp hàm update của UserModel
-  //     console.log(`Controller updating profile for userId: ${userIdToUpdate} with data:`, filteredDataForDb);
-  //     const affectedRows = await UserModel.update(userIdToUpdate, filteredDataForDb);
+      // 4. Gọi trực tiếp hàm update của UserModel
+      console.log(`Controller updating profile for userId: ${userIdToUpdate} with data:`, filteredDataForDb);
+      const affectedRows = await UserModel.update(userIdToUpdate, filteredDataForDb);
 
-  //     // 5. Xử lý kết quả update
-  //     if (affectedRows === 0) {
-  //       // Kiểm tra xem user có thực sự tồn tại không (dù đã check ownership)
-  //       const userExists = await UserModel.findById(userIdToUpdate);
-  //       if (!userExists) {
-  //            console.error(`User not found during update (though ownership check passed?) for userId: ${userIdToUpdate}`);
-  //            // Nếu dùng AppError: throw new AppError('User profile not found', 404);
-  //            return res.status(404).json({ message: 'User profile not found'});
-  //       }
-  //       // Nếu user tồn tại mà không update được => không có gì thay đổi hoặc lỗi khác
-  //       console.log(`Update called for user ${userIdToUpdate} but no rows affected.`);
-  //        // Có thể trả về 200 với user hiện tại hoặc lỗi tùy logic
-  //        return res.status(200).json({ message: 'Profile update requested, but no changes were applied.', user: userExists});
-  //     }
+      // 5. Xử lý kết quả update
+      if (affectedRows === 0) {
+        // Kiểm tra xem user có thực sự tồn tại không (dù đã check ownership)
+        const userExists = await UserModel.findById(userIdToUpdate);
+        if (!userExists) {
+             console.error(`User not found during update (though ownership check passed?) for userId: ${userIdToUpdate}`);
+             // Nếu dùng AppError: throw new AppError('User profile not found', 404);
+             return res.status(404).json({ message: 'User profile not found'});
+        }
+        // Nếu user tồn tại mà không update được => không có gì thay đổi hoặc lỗi khác
+        console.log(`Update called for user ${userIdToUpdate} but no rows affected.`);
+         // Có thể trả về 200 với user hiện tại hoặc lỗi tùy logic
+         return res.status(200).json({ message: 'Profile update requested, but no changes were applied.', user: userExists});
+      }
 
-  //     // 6. Lấy lại thông tin user đã cập nhật để trả về
-  //     const updatedUser = await UserModel.findById(userIdToUpdate);
-  //     if (!updatedUser) {
-  //        // Lỗi không mong muốn nếu update thành công mà không tìm lại được
-  //        console.error(`Failed to fetch updated profile for userId: ${userIdToUpdate}`);
-  //        // Nếu dùng AppError: throw new AppError('Could not retrieve updated profile', 500);
-  //         return res.status(500).json({ message: 'Could not retrieve updated profile'});
-  //     }
+      // 6. Lấy lại thông tin user đã cập nhật để trả về
+      const updatedUser = await UserModel.findById(userIdToUpdate);
+      if (!updatedUser) {
+         // Lỗi không mong muốn nếu update thành công mà không tìm lại được
+         console.error(`Failed to fetch updated profile for userId: ${userIdToUpdate}`);
+         // Nếu dùng AppError: throw new AppError('Could not retrieve updated profile', 500);
+          return res.status(500).json({ message: 'Could not retrieve updated profile'});
+      }
 
-  //     console.log(`Successfully updated profile for userId: ${userIdToUpdate}`);
-  //     res.status(200).json({
-  //       message: 'Profile updated successfully',
-  //       user: updatedUser // UserModel.findById đã bỏ hash
-  //     });
+      console.log(`Successfully updated profile for userId: ${userIdToUpdate}`);
+      res.status(200).json({
+        message: 'Profile updated successfully',
+        user: updatedUser // UserModel.findById đã bỏ hash
+      });
 
-  //   } catch (error) {
-  //     console.error(`Error updating profile for userId ${req.params.userId}:`, error);
-  //     next(error); // Chuyển lỗi đến error handler
-  //   }
-  // }
+    } catch (error) {
+      console.error(`Error updating profile for userId ${req.params.userId}:`, error);
+      next(error); // Chuyển lỗi đến error handler
+    }
+  }
 
-  // // Thêm các hàm controller khác nếu cần
+  // Thêm các hàm controller khác nếu cần
 };
