@@ -7,11 +7,7 @@ import ProfileUpdateForm from '../components/Profile/ProfileUpdateForm'; // <-- 
 
 function Profile() {
   // Sử dụng Context để lấy user và token
-    const { currentUser: loggedInUser, token, isAuthenticated, loading, logout } = useAuth(); // Lấy thêm isAuthenticated và loading
-    console.log("ProfilePage Render - loggedInUser:", loggedInUser, "isAuthenticated:", isAuthenticated, "loading:", loading);
-
-  console.log("ProfilePage Render - loggedInUser:", loggedInUser);
-  console.log("ProfilePage Render - token:", token);
+  const { currentUser: loggedInUser, token, isAuthenticated, loading, logout, setCurrentUser } = useAuth();
 
   // State cho dữ liệu profile fetch từ API
   const [profileData, setProfileData] = useState(null);
@@ -30,7 +26,7 @@ function Profile() {
       setError('');
       try {
         console.log(`Fetching profile for user ID: ${loggedInUser.user_id}`);
-        const data = await getUserProfile(loggedInUser.user_id , token); // token đã được xử lý bởi interceptor
+        const data = await getUserProfile(loggedInUser.user_id);
         console.log("Profile data received:", data);
         setProfileData(data);
       } catch (err) {
@@ -63,7 +59,7 @@ function Profile() {
      setError('');
      setSuccessMessage('');
 
-     if (!loggedInUser || !loggedInUser.user_id /*|| !token*/) {
+     if (!loggedInUser || !loggedInUser.user_id || !token) {
          setError("Authentication error.");
          setIsUpdating(false);
          return false; // Báo hiệu thất bại
@@ -72,14 +68,14 @@ function Profile() {
      try {
         console.log(`Updating profile for user ID: ${loggedInUser.user_id} with payload:`, updatePayload);
         // Gọi hàm API update (token được xử lý bởi interceptor)
-        const updatedUser = await updateUserProfile(loggedInUser.user_id, updatePayload /*, token */);
+        const updatedUser = await updateUserProfile(loggedInUser.user_id, updatePayload);
 
         console.log("Profile update response:", updatedUser);
 
         // Xử lý response từ API update
         if (updatedUser && updatedUser.user_id) { // Nếu API trả về user đã cập nhật
+            setCurrentUser(updatedUser);
             setProfileData(updatedUser); // Cập nhật state hiển thị
-            setLoggedInUserInContext(prev => ({...prev, ...updatedUser})); // Cập nhật context global
             setSuccessMessage('Profile updated successfully!');
             setTimeout(() => setSuccessMessage(''), 3000); // Xóa thông báo sau 3s
             return true; // Báo hiệu thành công
@@ -146,13 +142,13 @@ function Profile() {
       />
 
        {/* Nút Logout */}
-       {logout && (
+{/*       {logout && (
            <div className="text-center py-6">
                <button onClick={logout} className="px-4 py-2 bg-gray-500 text-white rounded shadow hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-400">
                    Logout
                </button>
            </div>
-       )}
+       )}*/}
     </div>
   );
 }

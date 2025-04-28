@@ -6,7 +6,7 @@ function ProfileDisplay({ profileData }) {
     return <div className="text-center p-10">No profile data available.</div>;
   }
 
-  const displayName = profileData.username || 'N/A';
+  const displayName = profileData.display_name || 'N/A';
   const displayEmail = profileData.email || 'N/A';
   const displayRole = profileData.role || 'N/A';
   const imageUrl = profileData.profile_picture || '/img/placeholder-avatar.png'; // Cần ảnh placeholder
@@ -54,11 +54,6 @@ function ProfileDisplay({ profileData }) {
                 <h3 className="text-2xl md:text-3xl font-semibold leading-normal mb-2 text-gray-800 dark:text-gray-200">
                   {displayName}
                 </h3>
-                <div className="text-sm leading-normal mt-0 mb-2 text-gray-500 dark:text-gray-400 font-bold uppercase">
-                  <i className="fas fa-map-marker-alt mr-2 text-lg text-gray-500 dark:text-gray-400"></i>
-                  {/* Cần lấy location từ contact_details hoặc trường riêng */}
-                  Location Placeholder, USA
-                </div>
                  <div className="mb-2 text-gray-700 dark:text-gray-300 mt-6 md:mt-10">
                   <i className="fas fa-briefcase mr-2 text-lg text-gray-500 dark:text-gray-400"></i>
                   Role: {displayRole}
