@@ -1,7 +1,7 @@
 import { createContext, useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 
-const AuthContext = createContext();
+export const AuthContext = createContext(null);
 
 export const useAuth = () => useContext(AuthContext);
 
@@ -35,6 +35,7 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   const fetchCurrentUser = async (authToken) => {
+    console.log("fetchCurrentUser called with token:", authToken);
     try {
       setLoading(true);
       const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/user`, {
@@ -48,6 +49,7 @@ export const AuthProvider = ({ children }) => {
 
       if (response.ok) {
         const userData = await response.json();
+        console.log("Get user data: ", userData)
         setCurrentUser(userData);
       } else {
         // Token might be invalid or expired
@@ -147,7 +149,8 @@ export const AuthProvider = ({ children }) => {
     logout,
     register,
     loginWithGoogle,
-    isAuthenticated: !!currentUser
+    isAuthenticated: !!currentUser,
+    setCurrentUser
   };
 
   return (
@@ -157,4 +160,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-export default AuthContext; 
+// export default AuthContext; 
