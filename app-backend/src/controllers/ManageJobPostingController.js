@@ -8,32 +8,45 @@ const jobPostingModel = require('../models/jobPostingModel');
  */
 const createJob = async (req, res) => {
     const { title, description, location, type } = req.body;
-    
-    // TEMPORARY: For testing without auth middleware
-    // In production, this would come from req.user.id
-    const recruiterId = req.body.recruiter_id || 1; // Use provided ID or default to 1 for testing
-    
-    // Validation
+  
     if (!title || !description || !type || !location) {
-        return res.status(400).json({ error: 'Title, description, type, and location are required.' });
+      return res.status(400).json({ error: 'Title, description, type, and location are required.' });
     }
-
+  
     try {
-        const jobData = {
-            title,
-            description,
-            location,
-            job_type: type,
-            recruiter_id: recruiterId,
-            status: 'Open'
-        };
-        const newJob = await jobPostingModel.create(jobData);
-        res.status(201).json(newJob);
+      const jobData = {
+        title,
+        description,
+        location,
+        job_type: type,
+        recruiter_id: req.body.recruiter_id || 1, // Default recruiter ID for testing
+        status: 'Open',
+      };
+      const newJob = await jobPostingModel.create(jobData);
+      res.status(201).json(newJob);
     } catch (error) {
-        console.error("Error creating job posting:", error);
-        res.status(500).json({ error: 'Failed to create job posting due to a server error.' });
+      console.error('Error creating job posting:', error);
+      res.status(500).json({ error: 'Failed to create job posting due to a server error.' });
     }
-};
+  };
+
+const getJobDetails = async (req, res) => {
+    const { jobId } = req.params;
+  
+    try {
+      const job = await jobPostingModel.findById(jobId);
+  
+      if (!job) {
+        return res.status(404).json({ error: 'Job not found.' });
+      }
+  
+      res.status(200).json(job);
+    } catch (error) {
+      console.error(`Error fetching job details for jobId ${jobId}:`, error);
+      res.status(500).json({ error: 'Failed to fetch job details due to a server error.' });
+    }
+  };
+
 
 /**
  * @desc    Get all job postings for the recruiter
@@ -64,6 +77,7 @@ const getRecruiterJobs = async (req, res) => {
  * @route   PUT /api/recruiter/job-postings/:jobId
  * @access  Public (Will be Private after middleware implementation)
  */
+
 const updateJob = async (req, res) => {
     const { jobId } = req.params;
     const { title, description, location, type } = req.body;
@@ -108,6 +122,37 @@ const updateJob = async (req, res) => {
         console.error(`Error updating job posting ${jobId}:`, error);
         res.status(500).json({ error: 'Failed to update job posting due to a server error.' });
     }
+};
+
+
+const applyForJob = async (req, res) => {
+  const { jobId } = req.params;
+  const { jobSeekerId, resume } = req.body;
+
+  if (!jobSeekerId || !resume) {
+    return res.status(400).json({ error: 'Job seeker ID and resume are required.' });
+  }
+
+  try {
+    const job = await jobPostingModel.findById(jobId);
+
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found.' });
+    }
+
+    const applicationData = {
+      job_seeker_id: jobSeekerId,
+      job_posting_id: jobId,
+      resume_snapshot: resume,
+      status: 'New',
+    };
+
+    const application = await applicationModel.create(applicationData);
+    res.status(201).json({ message: 'Application submitted successfully.', application });
+  } catch (error) {
+    console.error(`Error applying for job ${jobId}:`, error);
+    res.status(500).json({ error: 'Failed to submit application due to a server error.' });
+  }
 };
 
 /**

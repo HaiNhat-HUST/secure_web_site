@@ -49,9 +49,9 @@ const API_PREFIX = '/api';
 
 
 app.use('/auth', authRoutes);
-app.use('${API_PREFIX}/jobs', jobRoutes);
+app.use('${API_PREFIX}', jobRoutes);
 
-app.use(`${API_PREFIX}/profile`, profileRoutes);
+app.use('${API_PREFIX}/profile', profileRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {
