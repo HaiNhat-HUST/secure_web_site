@@ -9,6 +9,7 @@ import Dashboard from "../pages/RecruiterDashboard";
 import Profile from "../pages/Profile"; // Giả sử đây là trang Profile chính
 import ProtectedRoute from "../components/ProtectedRoute";
 import AuthCallback from "../pages/AuthCallback";
+import RoleSelection from "../pages/RoleSelection";
 
 const AppRoutes = () => {
   return (
@@ -22,6 +23,7 @@ const AppRoutes = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/select-role" element={<RoleSelection />} />
       </Route>
 
       {/* Protected routes */}
