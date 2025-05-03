@@ -5,7 +5,7 @@ exports.up = async function(knex) {
     table.string('username', 255).notNullable().unique();
     table.string('email', 255).notNullable().unique();
     table.string('password_hash', 255).nullable(); // Changed to nullable for OAuth users
-    table.enu('role', ['JobSeeker', 'Recruiter', 'Administrator']).notNullable();
+    table.enu('role', ['JobSeeker', 'Recruiter']).nullable();
     table.boolean('is_active').notNullable().defaultTo(true);
 
     // OAuth fields
