@@ -48,7 +48,7 @@ const API_PREFIX = '/api';
 const { authenticateJWT, hasRoleAssigned } = require('./middleware/authMiddleware');
 
 // Public routes
-app.use(`${API_PREFIX}/auth`, authRoutes);
+app.use('/auth', authRoutes);
 
 // Protected routes
 app.use(`${API_PREFIX}/jobs`, authenticateJWT, hasRoleAssigned, jobRoutes);
