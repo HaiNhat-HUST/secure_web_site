@@ -5,7 +5,7 @@ import Home from "../pages/Home";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import MainLayout from "../layouts/MainLayout";
-import Dashboard from "../pages/RecruiterDashboard";
+import Dashboard from "../pages/Dashboard.jsx";
 import Profile from "../pages/Profile"; // Giả sử đây là trang Profile chính
 import ProtectedRoute from "../components/ProtectedRoute";
 import AuthCallback from "../pages/AuthCallback";
