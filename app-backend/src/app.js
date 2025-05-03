@@ -44,14 +44,15 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // Routes
-
 const API_PREFIX = '/api';
+const { authenticateJWT, hasRoleAssigned } = require('./middleware/authMiddleware');
 
+// Public routes
+app.use(`${API_PREFIX}/auth`, authRoutes);
 
-app.use('/auth', authRoutes);
-app.use('${API_PREFIX}/jobs', jobRoutes);
-
-app.use(`${API_PREFIX}/profile`, profileRoutes);
+// Protected routes
+app.use(`${API_PREFIX}/jobs`, authenticateJWT, hasRoleAssigned, jobRoutes);
+app.use(`${API_PREFIX}/profile`, authenticateJWT, hasRoleAssigned, profileRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {

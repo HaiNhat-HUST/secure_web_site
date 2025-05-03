@@ -145,7 +145,44 @@ module.exports = {
       console.error('Get current user error:', error);
       return res.status(500).json({ message: 'Server error' });
     }
+  },
+
+  // Select user role
+  selectRole: async (req, res) => {
+    try {
+      const { role } = req.body;
+      const userId = req.user.user_id;
+
+      if (!role) {
+        return res.status(400).json({ message: 'Role is required' });
+      }
+
+      // Validate role
+      const validRoles = ['JobSeeker', 'Recruiter'];
+      if (!validRoles.includes(role)) {
+        return res.status(400).json({ message: 'Invalid role. Must be either JobSeeker or Recruiter' });
+      }
+
+      // Update user role
+      const updatedUser = await UserModel.update(userId, { role });
+      
+      if (!updatedUser) {
+        return res.status(404).json({ message: 'User not found' });
+      }
+
+      // Generate new token with updated role
+      const token = generateToken(updatedUser[0]);
+
+      return res.status(200).json({
+        message: 'Role selected successfully',
+        user: updatedUser[0],
+        token
+      });
+
+    } catch (error) {
+      console.error('Role selection error:', error);
+      return res.status(500).json({ message: 'Server error during role selection' });
+    }
   }
-  
 }
 

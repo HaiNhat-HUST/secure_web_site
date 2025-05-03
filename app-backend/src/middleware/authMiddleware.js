@@ -55,8 +55,26 @@ const hasRole = (roles) => {
   };
 };
 
+// Check if user has a role assigned
+const hasRoleAssigned = (req, res, next) => {
+  if (!req.user) {
+    return res.status(401).json({ message: 'Unauthorized. Please login.' });
+  }
+  
+  if (req.user.role === null) {
+    return res.status(403).json({ 
+      message: 'Role not assigned',
+      redirect: '/api/auth/select-role',
+      user: req.user 
+    });
+  }
+  
+  return next();
+};
+
 module.exports = {
   authenticateJWT,
   isAuthenticated,
-  hasRole
+  hasRole,
+  hasRoleAssigned
 }; 
