@@ -39,6 +39,11 @@ exports.up = async function(knex) {
     table.dropColumn('posting_date');
 
   });
+
+  // Modify the role column to allow NULL values
+  await knex.schema.alterTable('users', function(table) {
+    table.enu('role', ['JobSeeker', 'Recruiter', 'Administrator']).nullable().alter();
+  });
 };
 
 /**
@@ -51,5 +56,10 @@ exports.down = async function(knex) {
     // Thêm lại cột closing_date với định nghĩa ban đầu
     table.timestamp('posting_date', { useTz: true }).nullable();
     // Thêm lại các cột khác nếu có
+  });
+
+  // Revert the change - make role non-nullable again
+  await knex.schema.alterTable('users', function(table) {
+    table.enu('role', ['JobSeeker', 'Recruiter', 'Administrator']).notNullable().alter();
   });
 };

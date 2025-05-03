@@ -17,7 +17,7 @@ const generateToken = (user) => {
 module.exports = {
   register: async (req, res) => {
     try {
-      const {username, email, password, role = 'JobSeeker'} = req.body;
+      const {username, email, password} = req.body;
 
       if (!username || !email || !password) {
         return res.status(400).json({message: 'Username, email and password are required' });
@@ -35,11 +35,11 @@ module.exports = {
 
       const passwordHash = await hassPassword(password);
 
-      const userData = {
+      const userData = {  // user role will be null at register
         username,
         email,
+        role: null,
         password_hash: passwordHash,
-        role,
         created_at: new Date(),
         updated_at: new Date(),
       };

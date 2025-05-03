@@ -44,7 +44,7 @@ module.exports = {
       email: profileData.emails[0].value,
       display_name: profileData.displayName,
       profile_picture: profileData.photos[0].value,
-      role: 'JobSeeker', // Default role
+      role: null, // Default role
       password_hash: null, // No password for OAuth users
       created_at: new Date(),
       updated_at: new Date()
