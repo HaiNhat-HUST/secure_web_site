@@ -3,15 +3,12 @@ import CandidateDashboard from "./CandidateDashboard";
 import { useAuth } from "../context/AuthContext";
 
 
-// handle dashboard based on role
-// implement latter with login function and backend
-// rename some component 
 const Dashboard = () => {
-    const { user } = useAuth();
+    const { currentUser } = useAuth();
 
-    if (!user) return <p>Loading...</p>;
-
-    return user.role === "recruiter" ? <RecruiterDashboard /> : <CandidateDashboard />;
+    if (!currentUser) return <p>Loading...</p>;
+    
+    return currentUser.role === "Recruiter" ? <RecruiterDashboard /> : <CandidateDashboard />;
 };
 
-export default Dashboard;
+export default Dashboard;  
