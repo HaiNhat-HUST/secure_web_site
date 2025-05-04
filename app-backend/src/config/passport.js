@@ -46,7 +46,7 @@ passport.use(
 
         const isPasswordValid = await verifyPassword(password, user.password_hash);
         if (!isPasswordValid) {
-          return done(null, false, {message: 'VAlid credentails'});
+          return done(null, false, {message: 'Valid credentails'});
         }
 
         return done(null,user);

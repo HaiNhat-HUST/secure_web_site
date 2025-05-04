@@ -1,13 +1,16 @@
 const express = require('express');
 const passport = require('passport');
 const authController = require('../controllers/authController');
-const { authenticateJWT } = require('../middleware/authMiddleware');
+const { authenticateJWT, hasRoleAssigned } = require('../middleware/authMiddleware');
 
 const router = express.Router();
 
 // Authentication
 router.post('/register', authController.register);
-router.post('/login', authController.login)
+router.post('/login', authController.login);
+
+// Role selection
+router.post('/select-role', authenticateJWT, authController.selectRole);
 
 // Google OAuth routes
 router.get(

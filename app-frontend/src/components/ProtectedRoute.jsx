@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useEffect } from 'react';
 
 const ProtectedRoute = () => {
-  const { isAuthenticated, loading, token, logout } = useAuth();
+  const { isAuthenticated, loading, token, currentUser, logout } = useAuth();
   const location = useLocation();
 
   // Check for token expiration
@@ -45,6 +45,11 @@ const ProtectedRoute = () => {
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
     return <Navigate to="/login" state={{ from: location.pathname }} />;
+  }
+
+  // Check if user has a role assigned
+  if (currentUser && currentUser.role === null) {
+    return <Navigate to="/select-role" state={{ from: location.pathname }} />;
   }
 
   // Render the protected content

@@ -141,6 +141,37 @@ export const AuthProvider = ({ children }) => {
     window.location.href = `${import.meta.env.VITE_API_URL}/auth/google`;
   };
 
+  const selectRole = async (role) => {
+    try {
+      setLoading(true);
+      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/select-role`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ role }),
+        credentials: 'include'
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to select role');
+      }
+
+      const data = await response.json();
+      localStorage.setItem('token', data.token);
+      setToken(data.token);
+      setCurrentUser(data.user);
+      return { success: true, user: data.user };
+    } catch (error) {
+      console.error('Role selection error:', error);
+      return { success: false, error: error.message };
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const value = {
     currentUser,
     token,
@@ -149,6 +180,7 @@ export const AuthProvider = ({ children }) => {
     logout,
     register,
     loginWithGoogle,
+    selectRole,
     isAuthenticated: !!currentUser,
     setCurrentUser
   };

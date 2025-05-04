@@ -1,0 +1,94 @@
+.dashboard-container {
+  @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8;
+}
+
+.dashboard-header {
+  @apply mb-8;
+}
+
+.dashboard-title {
+  @apply text-3xl font-bold text-gray-900 mb-2;
+}
+
+.dashboard-subtitle {
+  @apply text-sm text-gray-600;
+}
+
+.stats-grid {
+  @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8;
+}
+
+.stat-card {
+  @apply bg-white rounded-lg shadow-md p-6 transition-all hover:shadow-lg;
+}
+
+.stat-title {
+  @apply text-sm font-medium text-gray-500;
+}
+
+.stat-value {
+  @apply text-2xl font-semibold text-gray-900 mt-2;
+}
+
+.search-filter-section {
+  @apply flex flex-col sm:flex-row gap-4 mb-8;
+}
+
+.search-input {
+  @apply flex-1 rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500;
+}
+
+.filter-dropdown {
+  @apply rounded-lg border-gray-300 shadow-sm focus:ring-blue-500 focus:border-blue-500;
+}
+
+.posts-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
+}
+
+.post-card {
+  @apply bg-white rounded-lg shadow-md overflow-hidden transition-all hover:shadow-lg 
+         border border-gray-100 hover:border-blue-500;
+}
+
+.post-header {
+  @apply p-6 border-b border-gray-100;
+}
+
+.post-content {
+  @apply p-6;
+}
+
+.post-footer {
+  @apply px-6 py-4 bg-gray-50 flex justify-between items-center;
+}
+
+.action-button {
+  @apply inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md 
+         shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 
+         focus:ring-offset-2 focus:ring-blue-500 transition-colors;
+}
+
+.status-badge {
+  @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
+}
+
+.status-badge-active {
+  @apply bg-green-100 text-green-800;
+}
+
+.status-badge-closed {
+  @apply bg-red-100 text-red-800;
+}
+
+.loading-skeleton {
+  @apply animate-pulse bg-gray-200 rounded;
+}
+
+.error-message {
+  @apply bg-red-50 text-red-700 p-4 rounded-lg mb-4;
+}
+
+.success-message {
+  @apply bg-green-50 text-green-700 p-4 rounded-lg mb-4;
+}

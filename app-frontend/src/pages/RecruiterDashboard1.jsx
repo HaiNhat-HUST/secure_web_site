@@ -21,7 +21,7 @@ export default function RecruiterDashboard() {
 
   const fetchDashboardData = async () => {
     try {
-      const response = await axios.get('http://localhost:3000/api/recruiter/dashboard');
+      const response = await axios.get('http://localhost:3001/api/recruiter/dashboard');
       setDashboardData(response.data);
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
@@ -30,7 +30,7 @@ export default function RecruiterDashboard() {
 
   const createNewPost = async () => {
     try {
-      await axios.post('http://localhost:3000/api/jobs', newJob);
+      await axios.post('http://localhost:3001/api/jobs', newJob);
       alert('Job created successfully!');
       fetchDashboardData(); // Refresh data
     } catch (error) {
@@ -40,7 +40,7 @@ export default function RecruiterDashboard() {
 
   const updatePost = async (jobId) => {
     try {
-      await axios.put(`http://localhost:3000/api/recruiter/job-postings/${jobId}`, {
+      await axios.put(`http://localhost:3001/api/recruiter/job-postings/${jobId}`, {
         title: 'Updated Job Title',
       });
       alert('Job updated successfully!');
@@ -52,7 +52,7 @@ export default function RecruiterDashboard() {
 
   const closePost = async (jobId) => {
     try {
-      await axios.delete(`http://localhost:3000/api/recruiter/job-postings/${jobId}/close`);
+      await axios.delete(`http://localhost:3001/api/recruiter/job-postings/${jobId}/close`);
       alert('Job closed successfully!');
       fetchDashboardData(); // Refresh data
     } catch (error) {
@@ -62,7 +62,7 @@ export default function RecruiterDashboard() {
 
   const deletePost = async (jobId) => {
     try {
-      await axios.delete(`http://localhost:3000/api/recruiter/job-postings/${jobId}`);
+      await axios.delete(`http://localhost:3001/api/recruiter/job-postings/${jobId}`);
       alert('Job deleted successfully!');
       fetchDashboardData(); // Refresh data
     } catch (error) {
