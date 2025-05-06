@@ -5,6 +5,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const session = require('express-session');
 const passport = require('./config/passport');
+const path = require('path'); // Add missing path import
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
@@ -20,10 +21,10 @@ app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
 // CORS setup
-// Kiểm tra biến môi trường trước khi split
-const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS ? process.env.CORS_ALLOWED_ORIGINS.split(',') : '*'; // Cho phép tất cả nếu không có biến env
+// Check environment variable before splitting
+const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS ? process.env.CORS_ALLOWED_ORIGINS.split(',') : ['*']; // Allow all if no env var
 app.use(cors({
-  origin: process.env.CORS_ALLOWED_ORIGINS.split(','),
+  origin: allowedOrigins,
   credentials: true
 }));
 
@@ -49,9 +50,10 @@ const { authenticateJWT, hasRoleAssigned } = require('./middleware/authMiddlewar
 
 // Public routes
 app.use('/auth', authRoutes);
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Protected routes
-app.use(`${API_PREFIX}/jobs`, authenticateJWT, hasRoleAssigned, jobRoutes);
+// Protected routes - using job routes correctly
+app.use(API_PREFIX, authenticateJWT, jobRoutes);
 app.use(`${API_PREFIX}/profile`, authenticateJWT, hasRoleAssigned, profileRoutes);
 
 // Health check route
@@ -66,11 +68,10 @@ app.get(API_PREFIX, (req, res) => {
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(err.status || 500).json({
+  res.status(err.statusCode || 500).json({
     message: err.message || 'Internal Server Error',
-    status: err.status || 500
+    status: err.statusCode || 500
   });
 });
 
 module.exports = app;
-
