@@ -104,7 +104,6 @@ exports.getRecruiterJobs = async (req, res, next) => {
     const { userId } = req.user; // Assume the recruiter is authenticated
 
     const jobPostings = await db('job_postings').where('recruiter_id', userId);
-
     if (jobPostings.length === 0) {
       return res.status(200).json([]); // Return empty array instead of error
     }
@@ -213,3 +212,4 @@ exports.updateCandidateStatus = async (req, res, next) => {
     next(new BadRequestError('Unable to update candidate status'));
   }
 };
+
