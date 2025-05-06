@@ -28,3 +28,4 @@ router.get('/recruiter/:jobId/candidates', jobController.getCandidates);
 router.put('/recruiter/candidates/:candidateId/status', jobController.updateCandidateStatus);
 
 module.exports = router;
+
