@@ -1,5 +1,3 @@
-// migrations/xxxx_create_initial_schema.js
-
 exports.up = async function(knex) {
   // 1. Tạo bảng 'users'
   await knex.schema.createTable('users', function(table) {
@@ -15,7 +13,7 @@ exports.up = async function(knex) {
     table.string('profile_picture', 2000).nullable();
 
     table.text('contact_details').nullable();
-    table.string('resume_data').nullable();
+    table.text('resume_data').nullable();
 
     table.timestamp('created_at', { useTz: true }).notNullable().defaultTo(knex.fn.now());
     table.timestamp('updated_at', { useTz: true }).notNullable().defaultTo(knex.fn.now());
@@ -31,7 +29,6 @@ exports.up = async function(knex) {
     table.text('description').notNullable();
     table.string('location', 255);
     table.enu('job_type', ['FullTime', 'PartTime', 'Contract']).notNullable();
-    table.enu('status', ['Open', 'Closed', 'Archived']).notNullable().defaultTo('Open');
     table.enu('status', ['Open', 'Closed', 'Archived']).notNullable().defaultTo('Open');
 
     table.timestamp('closing_date', { useTz: true }).nullable();
