@@ -128,6 +128,37 @@ Chi tiết kế hoạch phát triển và danh sách công việc được theo 
 
 | Mã Sinh Viên | Tên Sinh Viên        |
 | :----------- | :------------------- |
-| 2022xxxx     | Lê Hải Nhật          |
+| 20225583     | Lê Hải Nhật          |
 | 2022xxxx     | Nguyễn Phương Linh   |
 | 20225544     | Hạ Nhật Duy          |
+
+| Feature                                                                                     | Person in charge      | Technologies / Methods                                         | Status        |
+| :------------------------------------------------------------------------------------------ | :-------------------- | :------------------------------------------------------------- | :-------------|
+| [BE+FE] Login + Register (with username/password)                                           | Lê Hải Nhật           | Express.js, JWT, PostgreSQL, React                             | Done          |
+| [BE] Database management with knex and init schema                                          | Hạ Nhật Duy           | PostgreSQL, Knex.js                                            | Done          |
+| [BE+FE] Profile UI and API                                                                  | Hạ Nhật Duy           | React, Express.js, REST API                                    | Done          |
+| [BE] Applied job API                                                                        | Nguyễn Phương Linh    | Express.js, PostgreSQL                                         | In Progress   |
+| [BE+FE] Posts API and Newsfeed UI                                                           | Nguyễn Phương Linh    | Express.js, React, REST API                                    | In Progress   |
+| [SEC] Password Authentication / Enforcing password policy                                   | Lê Hải Nhật           | Regex, Joi validation, OWASP guidelines                        | Done          |
+| [SEC] Password Authentication / Secure password storage                       | Lê Hải Nhật           | bcrypt                                                         | Done          |
+| [SEC] Password Authentication / Prevention of password guessing                             | Le Hai Nhat        | express-rate-limit, CAPTCHA, login attempt tracking            | Not Started   |
+| [SEC] Password Authentication / Password recovery                  | Le Hai Nhat       | Token-based recovery + Send password recovery email          | Not Started   |
+| [SEC] Session Auth / Secure mechanisms for using access tokens                              | Le Hai Nhat         | JWT expiration, tamper-proof signing, refresh tokens           | Not Started   |
+| [SEC] Session Auth / CSRF Defense                                                           | Chưa phân công        | CSRF tokens (e.g. `csurf`), SameSite cookie attributes         | Not Started   |
+| [SEC] Session Auth / Session hijacking defense                                              | Chưa phân công        | IP/device validation, rotating tokens, session timeout         | Not Started   |
+| [SEC] Authorization / Implement RBAC                                                        | Le Hai Nhat       | Role-based checks, middleware-based access control             | Done   |
+| [SEC] Input validation / Input validation and sanitization                                  | Chưa phân công        | Joi, express-validator, custom logic                           | Not Started   |
+| [SEC] Input validation / Protection against Injection attacks                               | Chưa phân công        | ORM (Knex), parameterized queries, input filtering             | Not Started   |
+| [SEC] Input validation / Prevention of path traversal, directory indexing                   | Chưa phân công        | path.normalize, whitelist allowed paths                        | Not Started   |
+| [SEC] Input validation / Upload file restriction                                             | Chưa phân công        | multer, MIME type check, file size limit                       | Not Started   |
+| [SEC] Info leakage prevention / Minimize server/software info in response                   | Chưa phân công        | Remove headers, error masking                                  | Not Started   |
+| [SEC] Info leakage prevention / Hide sensitive app info                                     | Chưa phân công        | Custom error messages, disable stack trace                     | Not Started   |
+| [SEC] Compliance / HTTPS implementation                                                     | Chưa phân công        | SSL certificates, force HTTPS redirect                         | Not Started   |
+| [SEC] Compliance / DoS mitigation                                                           | Chưa phân công        | Rate limiting, request size limit, timeout                     | Not Started   |
+| [SEC] Compliance / Secure storage and management of sensitive values                        | Chưa phân công        | Environment variables, encryption, vaults                      | Not Started   |
+| [SEC] Security Testing / Source code review (SonarQube, etc.)                               | Chưa phân công        | SonarQube, ESLint, code review                                 | Not Started   |
+| [SEC] Security Testing / Basic penetration testing (ZAP Proxy, Nikto, etc.)                 | Chưa phân công        | OWASP ZAP, Nikto, RAF DAS                                      | Not Started   |
+| [SEC] Bonus / Multi-factor authentication                                                   | Chưa phân công        | OTP via email/sms, authenticator apps                          | Not Started   |
+| [SEC] Bonus / Session hijacking detection (unfamiliar device, cookie reuse prevention)      | Chưa phân công        | Device fingerprinting, IP check, token invalidation            | Not Started   |
+| [SEC] Bonus / Advanced HTTP Flood prevention                                                | Chưa phân công        | Rate limiting, fail2ban, WAF                                   | Not Started   |
+
