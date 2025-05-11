@@ -2,7 +2,7 @@ const knex = require('knex');
 const multer = require('multer');
 const { BadRequestError, NotFoundError } = require('../utils/errors'); // Custom error handlers
 
-const db = knex({ client: 'pg', connection: process.env.DATABASE_URL });
+const db = require('../config/database');
 
 // Setup multer for file uploads (CV)
 const upload = multer({ dest: 'uploads/' });
@@ -14,20 +14,17 @@ exports.uploadResume = upload.single('resume');
 exports.getAllJobs = async (req, res, next) => {
   try {
     const { title, location, type } = req.query;
-
-    // Build the query dynamically based on filters
-    let query = db('job_postings').where('status', 'Open'); // Ensure open jobs only
+    let query = db('job_postings').where('status', 'Open'); // Use correct table name
 
     if (title) query = query.where('title', 'ILIKE', `%${title}%`);
     if (location) query = query.where('location', 'ILIKE', `%${location}%`);
     if (type) query = query.where('job_type', '=', type);
 
     const jobPostings = await query;
-
     res.status(200).json(jobPostings);
   } catch (error) {
-    console.error('Error fetching jobs:', error);
-    next(new BadRequestError('Invalid query parameters or unable to fetch job postings'));
+    console.error('Detailed error fetching jobs:', error.message, error.stack);
+    next(new BadRequestError(`Unable to fetch job postings: ${error.message}`));
   }
 };
 
@@ -161,11 +158,11 @@ exports.closeJob = async (req, res, next) => {
     // Close the job posting
     await db('job_postings')
       .where('job_posting_id', jobId)
-      .update({ status: 'Closed', updated_at: new Date() });
+      .update({ status: 'Closed', closing_date: new Date() });
 
-    res.status(200).json({ message: 'Job posting closed successfully' });
+    res.status(200).json({ message: 'Job post closed successfully' });
   } catch (error) {
-    next(new BadRequestError('Unable to close job posting'));
+    next(new BadRequestError('Unable to close job post'));
   }
 };
 
@@ -213,3 +210,36 @@ exports.updateCandidateStatus = async (req, res, next) => {
   }
 };
 
+// =================== 9. Recruiter: Delete Job Posting at DELETE /api/recruiter/job-postings/:jobId ===================
+exports.deleteJob = async (req, res, next) => {
+  try {
+    const { jobId } = req.params;
+    const { userId } = req.user; // Assume user is authenticated (middleware sets req.user)
+
+    // Validate job posting and ownership
+    const job = await db('job_postings').where('job_posting_id', jobId).first();
+    if (!job) {
+      return next(new NotFoundError('Job posting not found'));
+    }
+    if (job.recruiter_id !== userId) {
+      return next(new BadRequestError('Unauthorized: You can only delete your own job postings'));
+    }
+
+    // Delete the job posting
+    const deletedRows = await db('job_postings')
+      .where('job_posting_id', jobId)
+      .delete();
+
+    if (deletedRows === 0) {
+      return next(new BadRequestError('Failed to delete job posting'));
+    }
+
+    res.status(204).send(); // No content for successful deletion
+  } catch (error) {
+    console.error('Error deleting job posting:', error);
+    if (error.code === '23503') { // PostgreSQL foreign key violation
+      return next(new BadRequestError('Cannot delete job posting with existing applications'));
+    }
+    next(new BadRequestError('Unable to delete job posting: ' + error.message));
+  }
+};

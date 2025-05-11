@@ -1,5 +1,5 @@
 const db = require('../config/database');
-const TABLE_NAME = 'jobs_posting';
+const TABLE_NAME = 'job_postings';
 
 module.exports = {
   /**
