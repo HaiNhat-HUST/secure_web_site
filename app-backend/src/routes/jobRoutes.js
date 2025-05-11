@@ -15,8 +15,11 @@ router.get('/recruiter/job-postings', jobController.getRecruiterJobs);
 // PUT /api/recruiter/job-postings/:jobId - Update a specific job posting
 router.put('/recruiter/job-postings/:jobId', jobController.updateJob);
 
-// DELETE /api/recruiter/job-postings/:jobId/close - Close a specific job posting
-router.delete('/recruiter/job-postings/:jobId/close', jobController.closeJob);
+// POST /api/recruiter/job-postings/:jobId/close - Close a specific job posting
+router.post('/recruiter/job-postings/:jobId/close', jobController.closeJob);
+
+// DELETE /api/recruiter/job-postings/:jobId - Delete a specific job posting
+router.delete('/recruiter/job-postings/:jobId', jobController.deleteJob);
 
 // POST /api/jobs/apply/:jobId - Apply for a job
 router.post('/jobs/apply/:jobId', jobController.uploadResume, jobController.applyForJob);
