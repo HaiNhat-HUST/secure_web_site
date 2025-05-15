@@ -33,6 +33,14 @@ module.exports = {
         return res.status(400).json({message: 'Username already in use'});
       }
 
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+
+      if (!passwordRegex.test(password)) {
+        return res.status(400).json({
+          message: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.'
+        });
+      }
+
       const passwordHash = await hassPassword(password);
 
       const userData = {  // user role will be null at register
