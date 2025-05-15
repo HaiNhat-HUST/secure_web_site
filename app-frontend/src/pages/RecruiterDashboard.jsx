@@ -6,7 +6,7 @@ import '../styles/dashboard.css'; // Assuming styles are appropriate
 // Placeholder for your actual auth token retrieval
 // Replace this with your application's authentication logic (e.g., from localStorage, context, or a state management store)
 const getAuthToken = () => {
-  const token = localStorage.getItem('authToken');
+  const token = localStorage.getItem('token');
     if (!token) {
     console.warn("Auth token not found in localStorage. API calls might fail.");
   }
