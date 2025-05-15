@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const UserModel = require('../models/userModel');
 const { sendRecoveryEmail } = require('../utils/sendMailUtils');
-
+const { hashPassword } = require('../utils/passwordUtils')
 
 const JWT_SECRET = process.env.PASSWORD_RECOVERY_SECRET || 'meowmeow';
 
@@ -21,7 +21,7 @@ module.exports = {
 
       const token = jwt.sign({ email }, JWT_SECRET, { expiresIn: '10m' });
       
-      const resetLink = `BACKEND_URL/reset-password?token=${token}`;
+      const resetLink = `${process.env.FRONTEND_URL}/reset-password/${token}`;
 
       await sendRecoveryEmail(email, resetLink);
 
@@ -35,7 +35,7 @@ module.exports = {
   },
 
   resetPassword: async (req, res) => {
-    const { token, newPassword } = req.body;
+    const { token, password } = req.body;
 
     try {
       const decoded = jwt.verify(token, JWT_SECRET);
@@ -45,8 +45,18 @@ module.exports = {
       if (!user) {
         return res.status(400).json({ message: 'Invalid token or user does not exist' });
       }
+      
+      const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
 
-      await UserModel.updatePassword(email, newPassword);
+      if (!passwordRegex.test(password)) {
+        return res.status(400).json({
+          message: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character.'
+        });
+      }
+
+      const passwordHash = await hashPassword(password);
+
+      await UserModel.updatePassword(email, passwordHash);
 
       res.status(200).json({ message: 'Password has been reset successfully' });
     } catch (err) {

@@ -29,5 +29,5 @@ const loginLimiter = rateLimit({
 module.exports = {
   hashPassword,
   verifyPassword,
-  loginLimiter
+  loginLimiter,
 }

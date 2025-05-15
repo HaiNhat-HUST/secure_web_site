@@ -5,7 +5,7 @@ const TABLE_NAME = 'users';
 
 module.exports = {
   async findById(userId) {
-    return db(TABLE_NAME).where({ user_id: userId }).first(); // .first() để lấy 1 bản ghi hoặc undefined
+    return db(TABLE_NAME).where({ user_id: userId }).first(); 
   },
 
   async findByUsername(username) {
@@ -21,14 +21,13 @@ module.exports = {
   },
 
   async create(userData) {
-    // userData nên chứa các trường đã được chuẩn bị (vd: password đã hash)
-    const [newUserId] = await db(TABLE_NAME).insert(userData).returning('user_id'); // returning để lấy ID vừa tạo
-    return this.findById(newUserId.user_id || newUserId); // Lấy lại user vừa tạo để trả về đầy đủ thông tin
+    const [newUserId] = await db(TABLE_NAME).insert(userData).returning('user_id');
+    return this.findById(newUserId.user_id || newUserId); 
   },
 
   async update(userId, updateData) {
-    // updateData không nên chứa passwordHash trừ khi đang cập nhật password
-    updateData.updated_at = new Date(); // Cập nhật thời gian
+    
+    updateData.updated_at = new Date();
     return db(TABLE_NAME).where({ user_id: userId }).update(updateData).returning('*');
   },
 
@@ -63,5 +62,9 @@ module.exports = {
     
     return this.updateByEmail(email, updateData);
   },
+
+  async updatePassword(email, password_hash){
+     return db(TABLE_NAME).where({ email }).update({password_hash, updated_at: new Date()});
+  }
 
 };

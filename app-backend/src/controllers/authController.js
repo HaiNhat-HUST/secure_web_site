@@ -1,6 +1,6 @@
 const jwt = require('jsonwebtoken');
 const UserModel = require('../models/userModel');
-const { hassPassword, verifyPassword } = require('../utils/passwordUtils')
+const { hashPassword, verifyPassword } = require('../utils/passwordUtils')
 const {sendOTP} = require('../utils/sendMailUtils')
 // Helper to generate JWT
 const generateToken = (user) => {
@@ -42,7 +42,7 @@ module.exports = {
         });
       }
 
-      const passwordHash = await hassPassword(password);
+      const passwordHash = await hashPassword(password);
 
       const userData = {  // user role will be null at register
         username,
