@@ -2,12 +2,15 @@ const express = require('express');
 const passport = require('passport');
 const authController = require('../controllers/authController');
 const { authenticateJWT, hasRoleAssigned } = require('../middleware/authMiddleware');
+const {loginLimiter} = require('../utils/passwordUtils');
 
 const router = express.Router();
 
+
+
 // Authentication
 router.post('/register', authController.register);
-router.post('/login', authController.login);
+router.post('/login', loginLimiter, authController.login);
 
 // Role selection
 router.post('/select-role', authenticateJWT, authController.selectRole);
