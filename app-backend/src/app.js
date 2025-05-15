@@ -5,12 +5,13 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const session = require('express-session');
 const passport = require('./config/passport');
-const path = require('path'); // Add missing path import
+const path = require('path');
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const jobRoutes = require('./routes/jobRoutes');
 const profileRoutes = require('./routes/profileRoutes');
+const passwordRecoveryRoutes = require('./routes/passwordRecoveryRoutes');
 
 const app = express();
 
@@ -50,6 +51,7 @@ const { authenticateJWT, hasRoleAssigned } = require('./middleware/authMiddlewar
 
 // Public routes
 app.use('/auth', authRoutes);
+app.use(passwordRecoveryRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Protected routes - using job routes correctly

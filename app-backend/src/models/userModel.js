@@ -64,5 +64,4 @@ module.exports = {
     return this.updateByEmail(email, updateData);
   },
 
-  // Thêm các hàm khác nếu cần (delete, findAll, ...)
 };
