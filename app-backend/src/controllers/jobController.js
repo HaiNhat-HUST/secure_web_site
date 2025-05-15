@@ -28,37 +28,35 @@ exports.getAllJobs = async (req, res, next) => {
   }
 };
 
-// =================== 2. Apply for a Job ===================
-exports.applyForJob = async (req, res, next) => {
+// =================== 2. View Job Posting Details ===================
+exports.getJobById = async (req, res, next) => {
   try {
     const { jobId } = req.params;
-    const { userId } = req.user; // Assume user is authenticated (middleware for user context)
-    const resume = req.file;
-
-    if (!resume) {
-      return next(new BadRequestError('Resume file is required'));
-    }
-
+    
     // Validate jobId
-    const job = await db('job_postings').where('job_posting_id', jobId).first();
-    if (!job) {
-      return next(new NotFoundError('Job posting not found'));
+    if (!jobId || isNaN(parseInt(jobId))) {
+      return next(new BadRequestError('Invalid job ID format'));
     }
-
-    // Insert application
-    await db('applications').insert({
-      job_seeker_id: userId,
-      job_posting_id: jobId,
-      resume_snapshot: resume.path, // Store file path or handle file storage as needed
-      status: 'New',
-      submission_date: new Date(),
-      created_at: new Date(),
-      updated_at: new Date(),
-    });
-
-    res.status(201).json({ message: 'Application submitted successfully' });
+    
+    // Fetch the job posting
+    const job = await db('job_postings')
+      .leftJoin('users', 'job_postings.recruiter_id', 'users.user_id')
+      .where({ 'job_postings.job_posting_id': jobId, 'job_postings.status': 'Open' })
+      .select(
+        'job_postings.*',
+        'users.display_name as recruiter_display_name',
+        'users.email as recruiter_email'
+      )
+      .first();
+    
+    if (!job) {
+      return next(new NotFoundError('Job posting not found or not open'));
+    }
+    
+    res.status(200).json(job);
   } catch (error) {
-    next(new BadRequestError('Invalid job posting ID or unable to apply'));
+    console.error('Error fetching job details:', error);
+    next(new BadRequestError('Unable to fetch job details'));
   }
 };
 

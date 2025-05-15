@@ -5,7 +5,7 @@ const helmet = require('helmet');
 const morgan = require('morgan');
 const session = require('express-session');
 const passport = require('./config/passport');
-const path = require('path'); // Add missing path import
+const path = require('path'); 
 
 // Import routes
 const authRoutes = require('./routes/authRoutes');
@@ -46,14 +46,16 @@ app.use(passport.session());
 
 // Routes
 const API_PREFIX = '/api';
-const { authenticateJWT, hasRoleAssigned } = require('./middleware/authMiddleware');
+const { authenticateJWT, hasRoleAssigned, hasRole } = require('./middleware/authMiddleware');
 
 // Public routes
 app.use('/auth', authRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
-// Protected routes - using job routes correctly
+// Job routes 
 app.use(API_PREFIX, jobRoutes);
+
+// Profile routes
 app.use(`${API_PREFIX}/profile`, authenticateJWT, hasRoleAssigned, profileRoutes);
 
 // Health check route
@@ -75,4 +77,3 @@ app.use((err, req, res, next) => {
 });
 
 module.exports = app;
-
