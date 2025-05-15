@@ -20,7 +20,6 @@ const AuthCallback = () => {
           setProcessing(false);
           return;
         }
-
         // Token handling is done in the AuthContext useEffect
         // Wait for isAuthenticated to become true
         if (isAuthenticated) {
