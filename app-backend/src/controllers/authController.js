@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
 const UserModel = require('../models/userModel');
-const { hashPassword, verifyPassword } = require('../utils/passwordUtils')
-const {sendOTP} = require('../utils/sendMailUtils')
+const { hashPassword, verifyPassword } = require('../utils/passwordUtils');
+
 // Helper to generate JWT
 const generateToken = (user) => {
   return jwt.sign(
