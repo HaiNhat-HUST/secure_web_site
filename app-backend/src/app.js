@@ -7,10 +7,12 @@ const session = require('express-session');
 const passport = require('./config/passport');
 const path = require('path'); 
 
+
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const jobRoutes = require('./routes/jobRoutes');
 const profileRoutes = require('./routes/profileRoutes');
+const passwordRecoveryRoutes = require('./routes/passwordRecoveryRoutes');
 
 const app = express();
 
@@ -50,6 +52,7 @@ const { authenticateJWT, hasRoleAssigned, hasRole } = require('./middleware/auth
 
 // Public routes
 app.use('/auth', authRoutes);
+app.use(passwordRecoveryRoutes);
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Job routes 

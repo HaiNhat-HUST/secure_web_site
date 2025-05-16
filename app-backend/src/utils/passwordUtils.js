@@ -21,7 +21,7 @@ const loginLimiter = rateLimit({
     return res.status(429).json({
       error: true,
       message: 'Too many login attempts. Please try again after 15 minutes.',
-      retryAfter: options.windowMs / 1000, // seconds
+      retryAfter: options.windowMs / 1000, 
     });
   }
 });
@@ -29,5 +29,5 @@ const loginLimiter = rateLimit({
 module.exports = {
   hashPassword,
   verifyPassword,
-  loginLimiter
+  loginLimiter,
 }

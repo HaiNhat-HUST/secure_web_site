@@ -115,10 +115,16 @@ const Login = () => {
           Login with Google
         </button>
         
+        <div className="text-right mb-4">
+          <Link to="/forgot-password" className="text-sm text-blue-600 hover:underline">
+            Forgot password?
+          </Link>
+      </div>
+        
         <p className="text-center mt-6 text-sm text-gray-600">
           Don't have an account? <Link to="/register" className="text-blue-600 hover:text-blue-800">Register</Link>
         </p>
-      </div>
+    </div>
     </div>
   );
 };
