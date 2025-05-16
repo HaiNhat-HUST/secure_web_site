@@ -24,6 +24,7 @@ const AppRoutes = () => {
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/role-selection" element={<RoleSelection />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
+        <Route path="/select-role" element={<RoleSelection />} />
       </Route>
 
       {/* private route - need authentication */}
