@@ -15,6 +15,7 @@ import ResetPassword from '../pages/ResetPassword';
 const AppRoutes = () => {
   return (
     <Routes>
+      {/* Public route */}
       <Route element={<MainLayout />}>
         <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
@@ -24,25 +25,15 @@ const AppRoutes = () => {
         <Route path="/role-selection" element={<RoleSelection />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
       </Route>
-      
-      <Route path="/dashboard" element={
-        <ProtectedRoute>
-          <Dashboard />
-        </ProtectedRoute>
-      } />
 
       <Route element={<MainLayout />}>
-        {/* ProtectedRoute bao bọc các route cần đăng nhập */}
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
-          {/* Trang Profile của người dùng hiện tại */}
           <Route path="/profile" element={<Profile />} />
         </Route>
       </Route>
 
-      {/* Fallback route - Nên hiển thị trang 404 Not Found */}
-      {/* <Route path="*" element={<NotFoundPage />} /> */}
-      <Route path="*" element={<Home />} /> {/* Tạm thời về Home */}
+      <Route path="*" element={<Home />} /> 
     </Routes>
   );
 };
