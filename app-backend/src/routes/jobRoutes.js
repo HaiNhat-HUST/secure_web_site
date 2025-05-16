@@ -21,7 +21,7 @@ router.post(
 
 // PROTECTED: Only authenticated Recruiters can perform job management
 router.post(
-  '/jobs',
+  '/recruiter/job-postings',
   authenticateJWT,
   hasRole(['Recruiter']),
   jobController.createJob
