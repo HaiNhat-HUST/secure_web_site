@@ -52,50 +52,34 @@ exports.getJobById = async (req, res, next) => {
   }
 };
 
-// =================== 3. Recruiter: Create Job Posting (with Spam Check) ===================
+// =================== 3. Recruiter: Create Job Posting ===================
 exports.createJob = async (req, res, next) => {
   try {
-    const { title, description, location, job_type } = req.body; // Use job_type consistently
-    // const jobType = req.body.job_type || req.body.type; // Keep if frontend might send 'type'
+    // Extract fields from request body
+    const { title, description, location } = req.body;
     
-    // Authentication and role check should be handled by middleware before this controller action
-    if (!req.user || !req.user.userId) {
-      // This check is a safeguard, middleware should catch it first
-      return next(new BadRequestError('User authentication required.'));
-    }
-    const recruiter_id = req.user.userId;
-    if (!title || !description || !location || !job_type) {
-      return next(new BadRequestError('All fields are required: title, description, location, and job_type.'));
+    // Handle the job type field - could be sent as either "job_type" or "type"
+    const jobType = req.body.job_type || req.body.type;
+
+    // Validate required fields
+    if (!title || !description || !location || !jobType) {
+      return next(new BadRequestError('All fields are required: title, description, location, and job type'));
     }
 
-    // Normalize or trim inputs if necessary before checking for duplicates
-    const normalizedTitle = title.trim();
-    const normalizedDescription = description.trim(); // Basic trim, consider more advanced normalization
+    // Use the exact user_id of the recruiter for recruiter_id
+    const recruiterId = req.user.user_id;
 
-    // Check for existing identical job by this recruiter
-    const existingJob = await jobPostingModel.findExistingJobByContent(
-      normalizedTitle,
-      normalizedDescription,
-      recruiter_id
-    );
-
-    if (existingJob) {
-      return next(new BadRequestError(
-        'You have already posted an identical job (same title and description). Please post a new unique job or update the existing one.'
-      ));
-    }
-
-    const jobData = {
-      title: normalizedTitle,
-      description: normalizedDescription,
-        location, 
-      job_type, // Use the consistent field name
-      recruiter_id,
-      // status: 'Open', // Model's create method handles default status
-      // created_at, updated_at, posting_date are handled by model's create method
-};
-
-    const newJobPosting = await jobPostingModel.create(jobData);
+    // Insert the new job posting - ensure job_type field name matches the database column
+    const [newJobPosting] = await db('job_postings').insert({
+      title,
+      description,
+      location,
+      job_type: jobType, // Map to job_type column in database
+      recruiter_id: recruiterId,
+      status: 'Open',
+      created_at: new Date(),
+      updated_at: new Date(),
+    }).returning('*');
 
     res.status(201).json(newJobPosting);
   } catch (error) {
