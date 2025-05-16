@@ -26,6 +26,7 @@ const AppRoutes = () => {
         <Route path="/auth/callback" element={<AuthCallback />} />
       </Route>
 
+      {/* private route - need authentication */}
       <Route element={<MainLayout />}>
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
