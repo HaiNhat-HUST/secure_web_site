@@ -14,7 +14,7 @@ exports.uploadResume = upload.single('resume');
 exports.getAllJobs = async (req, res, next) => {
   try {
     const { title, location, type } = req.query;
-    let query = db('job_postings').where('status', 'Open'); // Use correct table name
+    let query = db('job_postings').where('status', 'Open'); 
 
     if (title) query = query.where('title', 'ILIKE', `%${title}%`);
     if (location) query = query.where('location', 'ILIKE', `%${location}%`);
@@ -28,39 +28,51 @@ exports.getAllJobs = async (req, res, next) => {
   }
 };
 
-// =================== 2. Apply for a Job ===================
-exports.applyForJob = async (req, res, next) => {
+
+// =================== 2. View specific Job details (Optimized for Frontend) ===================
+exports.getJobById = async (req, res, next) => {
   try {
     const { jobId } = req.params;
-    const { userId } = req.user; // Assume user is authenticated (middleware for user context)
-    const resume = req.file;
 
-    if (!resume) {
-      return next(new BadRequestError('Resume file is required'));
+    // Validate jobId format (basic validation)
+    if (isNaN(parseInt(jobId, 10))) {
+        return next(new BadRequestError('Invalid Job ID format.'));
     }
 
-    // Validate jobId
-    const job = await db('job_postings').where('job_posting_id', jobId).first();
-    if (!job) {
-      return next(new NotFoundError('Job posting not found'));
+    const jobPosting = await db('job_postings')
+      .leftJoin('users as recruiter_users', 'job_postings.recruiter_id', 'recruiter_users.user_id') // Join with users table for recruiter info
+      .where({
+        'job_postings.job_posting_id': jobId,
+        // For public view, only 'Open' jobs are shown.
+        'job_postings.status': 'Open'
+      })
+      .select(
+        'job_postings.job_posting_id',
+        'job_postings.title',
+        'job_postings.description',
+        'job_postings.location',
+        'job_postings.job_type',
+        'job_postings.status',
+        'job_postings.created_at',
+        'job_postings.updated_at',
+        'job_postings.closing_date',
+        'job_postings.recruiter_id', 
+      )
+      .first(); // Since we expect only one job or none
+
+    if (!jobPosting) {
+      // It's important to let the frontend know if the job is not found OR not 'Open' for public view
+      return next(new NotFoundError('Job posting not found or is not currently open.'));
     }
 
-    // Insert application
-    await db('applications').insert({
-      job_seeker_id: userId,
-      job_posting_id: jobId,
-      resume_snapshot: resume.path, // Store file path or handle file storage as needed
-      status: 'New',
-      submission_date: new Date(),
-      created_at: new Date(),
-      updated_at: new Date(),
-    });
 
-    res.status(201).json({ message: 'Application submitted successfully' });
+    res.status(200).json(jobPosting);
   } catch (error) {
-    next(new BadRequestError('Invalid job posting ID or unable to apply'));
+    console.error('Error fetching job details by ID:', error);
+    next(new BadRequestError('An error occurred while fetching job details.'));
   }
 };
+
 
 // =================== 3. Recruiter: Create Job Posting ===================
 exports.createJob = async (req, res, next) => {
@@ -82,7 +94,7 @@ exports.createJob = async (req, res, next) => {
       description,
       location,
       job_type: jobType, // Map to job_type column in database
-      recruiter_id: req.user?.userId || 1, // Default for testing
+      recruiter_id: req.user, 
       status: 'Open',
       created_at: new Date(),
       updated_at: new Date(),
@@ -98,7 +110,7 @@ exports.createJob = async (req, res, next) => {
 // =================== 4. Recruiter: View Their Job Postings ===================
 exports.getRecruiterJobs = async (req, res, next) => {
   try {
-    const { userId } = req.user; // Assume the recruiter is authenticated
+    const { userId } = req.user; 
 
     const jobPostings = await db('job_postings').where('recruiter_id', userId);
     if (jobPostings.length === 0) {
@@ -214,7 +226,7 @@ exports.updateCandidateStatus = async (req, res, next) => {
 exports.deleteJob = async (req, res, next) => {
   try {
     const { jobId } = req.params;
-    const { userId } = req.user; // Assume user is authenticated (middleware sets req.user)
+    const { userId } = req.user; 
 
     // Validate job posting and ownership
     const job = await db('job_postings').where('job_posting_id', jobId).first();
