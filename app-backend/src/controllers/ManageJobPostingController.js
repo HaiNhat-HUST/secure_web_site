@@ -1,8 +1,8 @@
 const knex = require('knex');
 const multer = require('multer');
-const { BadRequestError, NotFoundError } = require('../utils/errors'); // Custom error handlers
-
-const db = require('../config/database');
+const { BadRequestError, NotFoundError } = require('../utils/errors');
+const jobPostingModel = require('../models/jobPostingModel');
+const applicationModel = require('../models/applicationModel');
 
 // Setup multer for file uploads (CV)
 const upload = multer({ dest: 'uploads/' });
@@ -10,17 +10,16 @@ const upload = multer({ dest: 'uploads/' });
 // Export middleware for file uploads
 exports.uploadResume = upload.single('resume');
 
-// =================== 1. View/Search Job Postings ===================
+// =================== 1. View all Job Postings (Public Newsfeed) ===================
 exports.getAllJobs = async (req, res, next) => {
   try {
-    const { title, location, type } = req.query;
-    let query = db('job_postings').where('status', 'Open'); // Use correct table name
+    const { title, location, type: job_type } = req.query;
+    const filters = { title, location, job_type };
+    // Remove undefined/null filters before passing to model
+    Object.keys(filters).forEach(key => filters[key] === undefined && delete filters[key]);
 
-    if (title) query = query.where('title', 'ILIKE', `%${title}%`);
-    if (location) query = query.where('location', 'ILIKE', `%${location}%`);
-    if (type) query = query.where('job_type', '=', type);
-
-    const jobPostings = await query;
+    // Use the model method for fetching job summaries
+    const jobPostings = await jobPostingModel.findAllOpenWithSummary(filters);
     res.status(200).json(jobPostings);
   } catch (error) {
     console.error('Detailed error fetching jobs:', error.message, error.stack);
@@ -28,65 +27,75 @@ exports.getAllJobs = async (req, res, next) => {
   }
 };
 
-// =================== 2. Apply for a Job ===================
-exports.applyForJob = async (req, res, next) => {
+// =================== 2. View specific Job details ===================
+exports.getJobById = async (req, res, next) => {
   try {
     const { jobId } = req.params;
-    const { userId } = req.user; // Assume user is authenticated (middleware for user context)
-    const resume = req.file;
 
-    if (!resume) {
-      return next(new BadRequestError('Resume file is required'));
+    // Validate jobId format (basic validation)
+    if (isNaN(parseInt(jobId, 10))) {
+        return next(new BadRequestError('Invalid Job ID format.'));
     }
 
-    // Validate jobId
-    const job = await db('job_postings').where('job_posting_id', jobId).first();
-    if (!job) {
-      return next(new NotFoundError('Job posting not found'));
+    // Use the new model method
+    const jobPosting = await jobPostingModel.findOpenJobDetailsById(jobId);
+
+    if (!jobPosting) {
+      // The model method already filters for 'Open' status.
+      return next(new NotFoundError('Job posting not found or is not currently open.'));
     }
 
-    // Insert application
-    await db('applications').insert({
-      job_seeker_id: userId,
-      job_posting_id: jobId,
-      resume_snapshot: resume.path, // Store file path or handle file storage as needed
-      status: 'New',
-      submission_date: new Date(),
-      created_at: new Date(),
-      updated_at: new Date(),
-    });
-
-    res.status(201).json({ message: 'Application submitted successfully' });
+    res.status(200).json(jobPosting);
   } catch (error) {
-    next(new BadRequestError('Invalid job posting ID or unable to apply'));
+    console.error('Error fetching job details by ID:', error);
+    next(new BadRequestError('An error occurred while fetching job details.'));
   }
 };
 
-// =================== 3. Recruiter: Create Job Posting ===================
+// =================== 3. Recruiter: Create Job Posting (with Spam Check) ===================
 exports.createJob = async (req, res, next) => {
   try {
-    // Extract fields from request body
-    const { title, description, location } = req.body;
+    const { title, description, location, job_type } = req.body; // Use job_type consistently
+    // const jobType = req.body.job_type || req.body.type; // Keep if frontend might send 'type'
     
-    // Handle the job type field - could be sent as either "job_type" or "type"
-    const jobType = req.body.job_type || req.body.type;
-
-    // Validate required fields
-    if (!title || !description || !location || !jobType) {
-      return next(new BadRequestError('All fields are required: title, description, location, and job type'));
+    // Authentication and role check should be handled by middleware before this controller action
+    if (!req.user || !req.user.userId) {
+      // This check is a safeguard, middleware should catch it first
+      return next(new BadRequestError('User authentication required.'));
+    }
+    const recruiter_id = req.user.userId;
+    if (!title || !description || !location || !job_type) {
+      return next(new BadRequestError('All fields are required: title, description, location, and job_type.'));
     }
 
-    // Insert the new job posting - ensure job_type field name matches the database column
-    const [newJobPosting] = await db('job_postings').insert({
-      title,
-      description,
-      location,
-      job_type: jobType, // Map to job_type column in database
-      recruiter_id: req.user?.userId || 1, // Default for testing
-      status: 'Open',
-      created_at: new Date(),
-      updated_at: new Date(),
-    }).returning('*');
+    // Normalize or trim inputs if necessary before checking for duplicates
+    const normalizedTitle = title.trim();
+    const normalizedDescription = description.trim(); // Basic trim, consider more advanced normalization
+
+    // Check for existing identical job by this recruiter
+    const existingJob = await jobPostingModel.findExistingJobByContent(
+      normalizedTitle,
+      normalizedDescription,
+      recruiter_id
+    );
+
+    if (existingJob) {
+      return next(new BadRequestError(
+        'You have already posted an identical job (same title and description). Please post a new unique job or update the existing one.'
+      ));
+    }
+
+    const jobData = {
+      title: normalizedTitle,
+      description: normalizedDescription,
+        location, 
+      job_type, // Use the consistent field name
+      recruiter_id,
+      // status: 'Open', // Model's create method handles default status
+      // created_at, updated_at, posting_date are handled by model's create method
+};
+
+    const newJobPosting = await jobPostingModel.create(jobData);
 
     res.status(201).json(newJobPosting);
   } catch (error) {
@@ -98,147 +107,167 @@ exports.createJob = async (req, res, next) => {
 // =================== 4. Recruiter: View Their Job Postings ===================
 exports.getRecruiterJobs = async (req, res, next) => {
   try {
-    const { userId } = req.user; // Assume the recruiter is authenticated
-
-    const jobPostings = await db('job_postings').where('recruiter_id', userId);
-    if (jobPostings.length === 0) {
-      return res.status(200).json([]); // Return empty array instead of error
+    if (!req.user || !req.user.userId) {
+      return next(new BadRequestError('User authentication required.'));
     }
+    const recruiter_id = req.user.userId;
+    const { status } = req.query; // Allow filtering by status
 
+    const jobPostings = await jobPostingModel.findByRecruiterId(recruiter_id, { status });
     res.status(200).json(jobPostings);
   } catch (error) {
-    next(new BadRequestError('Unable to fetch job postings'));
+    console.error('Error fetching recruiter jobs:', error);
+    next(new BadRequestError('Unable to fetch recruiter job postings.'));
   }
 };
 
 // =================== 5. Recruiter: Edit Job Posting ===================
 exports.updateJob = async (req, res, next) => {
   try {
-    const { jobId } = req.params;
-    const { title, description, location } = req.body;
-    
-    // Handle the job type field - could be sent as either "job_type" or "type"
-    const jobType = req.body.job_type || req.body.type;
+    const { jobId: job_posting_id } = req.params;
+    const { title, description, location, job_type } = req.body;
+     if (!req.user || !req.user.userId) {
+      return next(new BadRequestError('User authentication required.'));
+    }
+    const recruiter_id = req.user.userId;
 
-    // Validate job posting
-    const job = await db('job_postings').where('job_posting_id', jobId).first();
-    if (!job) {
-      return next(new NotFoundError('Job posting not found'));
+    const updateFields = {};
+    if (title !== undefined) updateFields.title = title.trim();
+    if (description !== undefined) updateFields.description = description.trim();
+    if (location !== undefined) updateFields.location = location;
+    if (job_type !== undefined) updateFields.job_type = job_type;
+
+
+    if (Object.keys(updateFields).length === 0) {
+      return next(new BadRequestError('No fields provided for update.'));
     }
 
-    // Update the job posting
-    await db('job_postings')
-      .where('job_posting_id', jobId)
-      .update({ 
-        title, 
-        description, 
-        location, 
-        job_type: jobType, // Ensure job_type field name matches database column
-        updated_at: new Date() 
-      });
+    // Optional: If title/description are being updated, check if the new combination
+    // would create a duplicate with *another* existing job by this recruiter.
+    // This is more complex and might be overkill depending on requirements.
+    // For now, we only prevent creating a new job that's identical to an existing one.
 
-    res.status(200).json({ message: 'Job posting updated successfully' });
+    const updatedCount = await jobPostingModel.update(job_posting_id, recruiter_id, updateFields);
+
+    if (updatedCount === 0) {
+      return next(new NotFoundError('Job posting not found, you are not authorized to edit it, or update failed.'));
+    }
+    res.status(200).json({ message: 'Job posting updated successfully.' });
   } catch (error) {
     console.error('Error updating job:', error);
     next(new BadRequestError('Unable to update job posting: ' + error.message));
-  }
+    }
 };
 
 // =================== 6. Recruiter: Close Job Posting ===================
 exports.closeJob = async (req, res, next) => {
   try {
-    const { jobId } = req.params;
+    const { jobId: job_posting_id } = req.params;
+    if (!req.user || !req.user.userId) {
+      return next(new BadRequestError('User authentication required.'));
+    }
+    const recruiter_id = req.user.userId;
 
-    // Validate job posting
-    const job = await db('job_postings').where('job_posting_id', jobId).first();
-    if (!job) {
-      return next(new NotFoundError('Job posting not found'));
+    const job = await jobPostingModel.findById(job_posting_id); // Basic find to check existence
+    if (!job || job.recruiter_id !== recruiter_id) { // Check ownership
+        return next(new NotFoundError('Job posting not found or you are not authorized to close it.'));
+    }
+    if (job.status === 'Closed') {
+        return res.status(200).json({ message: 'Job posting is already closed.' });
     }
 
-    // Close the job posting
-    await db('job_postings')
-      .where('job_posting_id', jobId)
-      .update({ status: 'Closed', closing_date: new Date() });
+    const updatedCount = await jobPostingModel.updateStatus(job_posting_id, recruiter_id, 'Closed');
 
-    res.status(200).json({ message: 'Job post closed successfully' });
+    if (updatedCount === 0) {
+      // This might happen if the job was deleted/changed by another process between find and update,
+      // or if the recruiter_id check in updateStatus failed (though we check ownership above).
+      return next(new NotFoundError('Close operation failed. Job may no longer exist or you lack permission.'));
+    }
+    res.status(200).json({ message: 'Job posting closed successfully.' });
   } catch (error) {
-    next(new BadRequestError('Unable to close job post'));
+    console.error('Error closing job:', error);
+    next(new BadRequestError('Unable to close job posting.'));
   }
 };
 
 // =================== 7. Recruiter: View Candidates ===================
 exports.getCandidates = async (req, res, next) => {
   try {
-    const { jobId } = req.params;
+    const { jobId: job_posting_id } = req.params;
+    if (!req.user || !req.user.userId) {
+      return next(new BadRequestError('User authentication required.'));
+    }
+    const recruiter_id = req.user.userId;
 
-    // Validate job posting
-    const job = await db('job_postings').where('job_posting_id', jobId).first();
-    if (!job) {
-      return next(new NotFoundError('Job posting not found'));
+    const job = await jobPostingModel.findById(job_posting_id);
+    if (!job || job.recruiter_id !== recruiter_id) {
+      return next(new NotFoundError('Job posting not found or you are not authorized to view its candidates.'));
     }
 
-    // Get applicants for this job posting
-    const applicants = await db('applications')
-      .join('users', 'applications.job_seeker_id', '=', 'users.user_id')
-      .where('applications.job_posting_id', jobId)
-      .select('users.username', 'applications.status', 'applications.resume_snapshot');
-
+    // Assuming you have an applicationModel.js with findByJobPostingId
+    // const applicationModel = require('../models/applicationModel'); // Make sure it's imported
+    const applicants = await applicationModel.findByJobPostingId(job_posting_id);
     res.status(200).json(applicants);
   } catch (error) {
-    next(new BadRequestError('Unable to fetch candidates'));
+    console.error('Error fetching candidates:', error);
+    next(new BadRequestError('Unable to fetch candidates.'));
   }
 };
 
 // =================== 8. Recruiter: Update Candidate Status ===================
 exports.updateCandidateStatus = async (req, res, next) => {
   try {
-    const { candidateId } = req.params;
+    const { applicationId } = req.params;
     const { status } = req.body;
+    if (!req.user || !req.user.userId) {
+      return next(new BadRequestError('User authentication required.'));
+    }
+    const recruiter_id = req.user.userId;
 
-    if (!status || !['New', 'Shortlisted', 'UnderReview'].includes(status)) {
-      return next(new BadRequestError('Invalid status'));
+    const validStatuses = ['New', 'UnderReview', 'Shortlisted', 'Rejected', 'Hired', 'InterviewScheduled'];
+    if (!status || !validStatuses.includes(status)) {
+      return next(new BadRequestError(`Invalid status. Must be one of: ${validStatuses.join(', ')}`));
     }
 
-    // Update candidate status
-    await db('applications')
-      .where('job_seeker_id', candidateId)
-      .update({ status, updated_at: new Date() });
+    // Verify application exists and belongs to a job managed by this recruiter
+    // const applicationModel = require('../models/applicationModel'); // Make sure it's imported
+    const applicationToVerify = await applicationModel.findByIdAndRecruiterJob(applicationId, recruiter_id);
+    if (!applicationToVerify) {
+      return next(new NotFoundError('Application not found or you are not authorized to update its status.'));
+    }
 
-    res.status(200).json({ message: 'Candidate status updated successfully' });
+    const updatedCount = await applicationModel.updateStatus(applicationId, status);
+    if (updatedCount === 0) {
+      return next(new BadRequestError('Failed to update candidate status.'));
+    }
+
+    res.status(200).json({ message: 'Candidate status updated successfully.' });
   } catch (error) {
-    next(new BadRequestError('Unable to update candidate status'));
-  }
+    console.error('Error updating candidate status:', error);
+    next(new BadRequestError('Unable to update candidate status.'));
+    }
 };
 
-// =================== 9. Recruiter: Delete Job Posting at DELETE /api/recruiter/job-postings/:jobId ===================
+// =================== 9. Recruiter: Delete Job Posting ===================
 exports.deleteJob = async (req, res, next) => {
   try {
-    const { jobId } = req.params;
-    const { userId } = req.user; // Assume user is authenticated (middleware sets req.user)
-
-    // Validate job posting and ownership
-    const job = await db('job_postings').where('job_posting_id', jobId).first();
-    if (!job) {
-      return next(new NotFoundError('Job posting not found'));
+    const { jobId: job_posting_id } = req.params;
+    if (!req.user || !req.user.userId) {
+      return next(new BadRequestError('User authentication required.'));
     }
-    if (job.recruiter_id !== userId) {
-      return next(new BadRequestError('Unauthorized: You can only delete your own job postings'));
-    }
+    const recruiter_id = req.user.userId;
 
-    // Delete the job posting
-    const deletedRows = await db('job_postings')
-      .where('job_posting_id', jobId)
-      .delete();
+    const deletedRows = await jobPostingModel.delete(job_posting_id, recruiter_id);
 
     if (deletedRows === 0) {
-      return next(new BadRequestError('Failed to delete job posting'));
+      return next(new NotFoundError('Job posting not found, you are not authorized to delete it, or delete failed.'));
     }
 
-    res.status(204).send(); // No content for successful deletion
+    res.status(204).send();
   } catch (error) {
     console.error('Error deleting job posting:', error);
-    if (error.code === '23503') { // PostgreSQL foreign key violation
-      return next(new BadRequestError('Cannot delete job posting with existing applications'));
+    if (error.code === '23503') {
+      return next(new BadRequestError('Cannot delete job posting due to existing references (e.g., applications).'));
     }
     next(new BadRequestError('Unable to delete job posting: ' + error.message));
   }

@@ -1,34 +1,69 @@
 const express = require('express');
-const jobController = require('../controllers/ManageJobPostingController');
-
+const jobController = require('../controllers/ManageJobPostingController'); 
+const applyController = require('../controllers/applyController'); 
+const { authenticateJWT, hasRole } = require('../middleware/authMiddleware');
 const router = express.Router();
 
-// POST /api/jobs - Create a new job posting
-router.post('/jobs', jobController.createJob);
-
-// GET /api/jobs - Get all job postings with optional filters
+// PUBLIC: Anyone can see job listings
 router.get('/jobs', jobController.getAllJobs);
 
-// GET /api/recruiter/job-postings - Get postings for the logged-in recruiter
-router.get('/recruiter/job-postings', jobController.getRecruiterJobs);
+// PUBLIC: Anyone can view job detail
+router.get('/jobs/:jobId', jobController.getJobById);
 
-// PUT /api/recruiter/job-postings/:jobId - Update a specific job posting
-router.put('/recruiter/job-postings/:jobId', jobController.updateJob);
+// PROTECTED: Only authenticated JobSeekers can apply
+router.post(
+  '/jobs/apply/:jobId',
+  authenticateJWT,
+  hasRole(['JobSeeker']),
+  applyController.uploadResume,
+  applyController.applyForJob
+);
 
-// POST /api/recruiter/job-postings/:jobId/close - Close a specific job posting
-router.post('/recruiter/job-postings/:jobId/close', jobController.closeJob);
+// PROTECTED: Only authenticated Recruiters can perform job management
+router.post(
+  '/jobs',
+  authenticateJWT,
+  hasRole(['Recruiter']),
+  jobController.createJob
+);
 
-// DELETE /api/recruiter/job-postings/:jobId - Delete a specific job posting
-router.delete('/recruiter/job-postings/:jobId', jobController.deleteJob);
+router.get(
+  '/recruiter/job-postings',
+  authenticateJWT,
+  hasRole(['Recruiter']),
+  jobController.getRecruiterJobs
+);
 
-// POST /api/jobs/apply/:jobId - Apply for a job
-router.post('/jobs/apply/:jobId', jobController.uploadResume, jobController.applyForJob);
+router.put(
+  '/recruiter/job-postings/:jobId',
+  authenticateJWT,
+  hasRole(['Recruiter']),
+  jobController.updateJob
+);
+router.post(
+  '/recruiter/job-postings/:jobId/close',
+  authenticateJWT,
+  hasRole(['Recruiter']),
+  jobController.closeJob
+);
+router.delete(
+  '/recruiter/job-postings/:jobId',
+  authenticateJWT,
+  hasRole(['Recruiter']),
+  jobController.deleteJob
+);
+router.get(
+  '/recruiter/job-postings/:jobId/candidates',
+  authenticateJWT,
+  hasRole(['Recruiter']),
+  jobController.getCandidates
+);
 
-// GET /api/recruiter/:jobId/candidates - Get all applicants for a job posting
-router.get('/recruiter/:jobId/candidates', jobController.getCandidates);
-
-// PUT /api/recruiter/candidates/:candidateId/status - Update candidate status
-router.put('/recruiter/candidates/:candidateId/status', jobController.updateCandidateStatus);
+router.put(
+  '/recruiter/applications/:applicationId/status',
+  authenticateJWT,
+  hasRole(['Recruiter']),
+  jobController.updateCandidateStatus
+);
 
 module.exports = router;
-
