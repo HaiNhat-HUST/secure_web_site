@@ -1,47 +1,49 @@
 const express = require('express');
-const jobController = require('../controllers/ManageJobPostingController'); 
+const jobController = require('../controllers/ManageJobPostingController');
+const newsfeedController = require('../controllers/newsfeedController');
 const applyController = require('../controllers/applyController'); 
 const { authenticateJWT, hasRole } = require('../middleware/authMiddleware');
+const { applicationLimiter, uploadLimiter } = require('../middleware/rateLimiter');
 const router = express.Router();
 
 // PUBLIC: Anyone can see job listings
-router.get('/jobs', jobController.getAllJobs);
+router.get('/jobs', newsfeedController.getAllJobs);
 
 // PUBLIC: Anyone can view job detail
-router.get('/jobs/:jobId', jobController.getJobById);
+router.get('/jobs/:jobId', newsfeedController.getJobById);
 
 // PROTECTED: Only authenticated JobSeekers can apply
 router.post(
   '/jobs/apply/:jobId',
   authenticateJWT,
   hasRole(['JobSeeker']),
-  applyController.uploadResume,
+  applicationLimiter,
   applyController.applyForJob
 );
 
 // PROTECTED: Only authenticated Recruiters can perform job management
 router.post(
-  '/recruiter/job-postings',
+  '/recruiter/job-postings',  //create job posting
   authenticateJWT,
   hasRole(['Recruiter']),
   jobController.createJob
 );
 
 router.get(
-  '/recruiter/job-postings',
+  '/recruiter/job-postings',  //get all job postings of current recruiter
   authenticateJWT,
   hasRole(['Recruiter']),
   jobController.getRecruiterJobs
 );
 
 router.put(
-  '/recruiter/job-postings/:jobId',
+  '/recruiter/job-postings/:jobId',    //update job posting
   authenticateJWT,
   hasRole(['Recruiter']),
   jobController.updateJob
 );
 router.post(
-  '/recruiter/job-postings/:jobId/close',
+  '/recruiter/job-postings/:jobId/close', 
   authenticateJWT,
   hasRole(['Recruiter']),
   jobController.closeJob

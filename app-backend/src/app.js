@@ -17,13 +17,40 @@ const app = express();
 
 // Middleware
 app.use(helmet()); // Security headers
+
+// Customize the  security headers as needed
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],  // Only allow content from the same origin
+      scriptSrc: ["'self'", "'unsafe-inline'", "trusted-cdn.com"], // Allow inline scripts and trusted CDN
+      styleSrc: ["'self'", "'unsafe-inline'"], // Allow inline styles
+      imgSrc: ["'self'", "data:"], // Allow images from self and data URIs
+      objectSrc: ["'none'"], // Prevent loading any plugins
+      upgradeInsecureRequests: [] // Automatically upgrade HTTP to HTTPS
+    }
+  },
+  frameguard: {
+    action: 'deny' // Prevents the  site from being embedded in an iframe
+  },
+  hsts: {
+    maxAge: 31536000, // 1 year in seconds
+    includeSubDomains: true, // Apply to all subdomains
+    preload: true // Add the  site to the HSTS preload list
+  },
+  xssFilter: true, // Enable XSS filter
+  referrerPolicy: { policy: 'strict-origin-when-cross-origin' } // Referrer policy for better privacy
+}));
+
 app.use(morgan('dev')); // Logging
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
 // CORS setup
-// Check environment variable before splitting
-const allowedOrigins = process.env.CORS_ALLOWED_ORIGINS ? process.env.CORS_ALLOWED_ORIGINS.split(',') : ['*']; // Allow all if no env var
+const allowedOrigins = [
+  'http://localhost:3000',
+  'http://127.0.0.1:3000'
+];
 app.use(cors({
   origin: allowedOrigins,
   credentials: true
