@@ -32,6 +32,7 @@ const AppRoutes = () => {
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
+          {/*<Route path="/profile/:userId" element={<Profile />} />*/}
         </Route>
       </Route>
 

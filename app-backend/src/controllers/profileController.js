@@ -1,140 +1,239 @@
-// src/controllers/profile.controller.js (hoặc user.controller.js)
+// src/controllers/profileController.js
+const UserModel = require('../models/userModel'); // Or your combined model for profile, education
+// If you split models:
+// const ProfileModel = require('../models/profileModel');
+// const EducationModel = require('../models/educationModel');
 
-const UserModel = require('../models/userModel');
-// Optional: Import lớp lỗi tùy chỉnh nếu bạn có
-// const AppError = require('../utils/AppError');
+// Utility to filter allowed fields (can be moved to a helper file)
+const filterAllowedFields = (data, allowedFieldsList) => {
+  const filtered = {};
+  for (const key in data) {
+    if (allowedFieldsList.includes(key)) {
+      filtered[key] = data[key];
+    }
+  }
+  return filtered;
+};
+
 
 module.exports = {
   /**
-   * Lấy thông tin profile của một user dựa vào userId từ URL.
-   * Controller này gọi trực tiếp Model.
+   * Gets the full user profile: core user data, profile details, and education history.
    */
-  async getUserProfile(req, res, next) {
-    try {
-      // 1. Lấy userId từ URL parameter
-      const requestedUserId = parseInt(req.params.userId, 10);
+  async getUserFullProfile(req, res, next) {
 
-      // 2. Kiểm tra tính hợp lệ cơ bản của ID (tùy chọn nhưng nên có)
+    console.log(`[Controller] getUserFullProfile called `);
+
+    try {
+      const requestedUserId = parseInt(req.params.userId, 10);
       if (isNaN(requestedUserId)) {
-        // Nếu dùng AppError: throw new AppError('Invalid User ID format', 400);
         return res.status(400).json({ message: 'Invalid User ID format' });
       }
 
-      // 3. Gọi trực tiếp hàm findById từ UserModel
-      console.log(`Controller fetching profile for userId: ${requestedUserId}`); // Logging
-      const userProfile = await UserModel.findById(requestedUserId);
+      // Use the new model method
+      const fullProfile = await UserModel.findFullUserProfileById(requestedUserId);
 
-      // 4. Xử lý kết quả từ Model
-      if (!userProfile) {
-        console.log(`User profile not found for userId: ${requestedUserId}`); // Logging
-        // Nếu dùng AppError: throw new AppError('User profile not found', 404);
+      if (!fullProfile || !fullProfile.user_core) { // user_core must exist if user exists
         return res.status(404).json({ message: 'User profile not found' });
       }
 
-      // 5. Gửi response thành công
-      // UserModel.findById đã được thiết kế để không trả về password_hash
-      console.log(`Successfully fetched profile for userId: ${requestedUserId}`); // Logging
-      res.status(200).json({
-        message: 'User profile retrieved successfully',
-        user: userProfile
-      });
+      // No need to filter password_hash here if UserModel.findFullUserProfileById selects carefully
+      res.status(200).json(fullProfile); // Send the whole structure
 
     } catch (error) {
-      // 6. Bắt lỗi và chuyển đến middleware xử lý lỗi tập trung
-      console.error(`Error fetching profile for userId ${req.params.userId}:`, error); // Logging lỗi
-      next(error); // Chuyển lỗi đi
+      console.error(`Error in getUserFullProfile for userId ${req.params.userId}:`, error);
+      next(error);
     }
   },
 
-  // --- Hàm updateProfile (cũng gọi model trực tiếp) ---
-   async updateUserProfile(req, res, next) {
+  /**
+   * Updates the user's profile details (data in user_profiles table).
+   */
+  async updateUserProfileDetails(req, res, next) {
     try {
       const userIdToUpdate = parseInt(req.params.userId, 10);
       const updateData = req.body;
-      const loggedInUser = req.user; // { userId, role } từ verifyToken
-      console.log('Get user from request: ', loggedInUser);
+      const loggedInUser = req.user; // { userID, role } from authenticateJWT
 
-      // ---- LOGIC NGHIỆP VỤ (TRỰC TIẾP TRONG CONTROLLER) ----
-
-      // 1. Kiểm tra quyền sở hữu (CỰC KỲ QUAN TRỌNG)
+      if (isNaN(userIdToUpdate)) {
+        return res.status(400).json({ message: 'Invalid User ID format' });
+      }
       if (!loggedInUser || loggedInUser.user_id !== userIdToUpdate) {
-        console.warn(`Forbidden attempt: User ${loggedInUser?.user_id} trying to update profile ${userIdToUpdate}`);
-        return res.status(403).json({ message: 'Forbidden: You can only update your own profile' });
+        return res.status(403).json({ message: 'Forbidden: You can only update your own profile details' });
       }
-
-      // 2. Kiểm tra dữ liệu đầu vào cơ bản
       if (!updateData || Object.keys(updateData).length === 0) {
-         return res.status(400).json({ message: 'No update data provided' });
+        return res.status(400).json({ message: 'No update data provided' });
       }
 
-      // 3. Lọc các trường được phép cập nhật dựa trên role (Logic này giờ nằm ở đây)
-      const allowedFields = {
-        JobSeeker: ['display_name', 'contact_details', 'resume_data'],
-        Recruiter: ['display_name', 'contact_details'],
+      // Define fields allowed to be updated in user_profiles
+      // These should match columns in your 'user_profiles' table
+      const allowedProfileDetailFields = [
+        'first_name', 'last_name', 'headline', 'summary',
+        'current_location_city', 'current_location_country',
+        'profile_picture_url', 'cover_image_url',
+        'public_email', 'phone_number', 'website_url',
+        'linkedin_profile_url', 'github_profile_url'
+        // Add any other fields from user_profiles table
+      ];
+      const filteredData = filterAllowedFields(updateData, allowedProfileDetailFields);
+
+      if (Object.keys(filteredData).length === 0) {
+        return res.status(400).json({ message: 'No valid fields provided for update.' });
+      }
+
+      // Use the new model method for upserting profile details
+      const updatedProfileRows = await UserModel.upsertProfileDetails(userIdToUpdate, filteredData);
+      
+      if (!updatedProfileRows || updatedProfileRows.length === 0) {
+          // This might happen if upsert fails or user_id doesn't exist (though unlikely after auth check)
+          return res.status(404).json({ message: 'Profile details not found or could not be updated.' });
+      }
+      
+      // Refetch the core user data if needed, or assume it's unchanged unless specifically updated
+      // For now, just return the updated profile details. Frontend might refetch full profile.
+      // Or, your upsertProfileDetails could return a combined object if it also updates users table fields.
+      
+      // To match frontend expectation of { profile_details, user_core (optional) }
+      const responsePayload = {
+          profile_details: updatedProfileRows[0], // Assuming upsert returns the affected row
+          // user_core: could be fetched again or if some user fields are updated along with profile details
       };
-      const allowed = allowedFields[loggedInUser.role] || [];
-      const filteredDataForDb = {}; // Dùng snake_case cho DB
-
-      for (const key in updateData) {
-         // Giả sử bạn cần chuyển đổi camelCase (vd: contactDetails) sang snake_case (contact_details)
-         // Bạn cần một hàm helper hoặc thư viện (lodash.snakeCase)
-         // const snakeKey = convertToSnakeCase(key); // Tự viết hoặc dùng thư viện
-         const snakeKey = key; // TẠM THỜI GIẢ SỬ INPUT ĐÃ LÀ SNAKE_CASE
-
-         if (allowed.includes(snakeKey)) {
-           filteredDataForDb[snakeKey] = updateData[key];
-         } else {
-           console.warn(`User role ${loggedInUser.role} attempted to update forbidden field: ${key} (as ${snakeKey})`);
-         }
-      }
-
-      if (Object.keys(filteredDataForDb).length === 0) {
-        // Nếu dùng AppError: throw new AppError('No valid fields to update for your role or data provided', 400);
-        return res.status(400).json({ message: 'No valid fields to update for your role or data provided'});
-      }
-
-      // ---- HẾT LOGIC NGHIỆP VỤ ----
 
 
-      // 4. Gọi trực tiếp hàm update của UserModel
-      console.log(`Controller updating profile for userId: ${userIdToUpdate} with data:`, filteredDataForDb);
-      const affectedRows = await UserModel.update(userIdToUpdate, filteredDataForDb);
+      // If first_name or last_name changes, it might affect display_name in users table.
+      // You might need an additional UserModel.update for `users` table if `display_name` is a concatenation.
+      // Or, AuthContext on frontend could use first_name/last_name from profile_details.
+      // For simplicity, we'll assume frontend handles display name composition.
+      // OR, your API response could include the updated user_core if updateUserProfileDetails also touches users table.
 
-      // 5. Xử lý kết quả update
-      if (affectedRows === 0) {
-        // Kiểm tra xem user có thực sự tồn tại không (dù đã check ownership)
-        const userExists = await UserModel.findById(userIdToUpdate);
-        if (!userExists) {
-             console.error(`User not found during update (though ownership check passed?) for userId: ${userIdToUpdate}`);
-             // Nếu dùng AppError: throw new AppError('User profile not found', 404);
-             return res.status(404).json({ message: 'User profile not found'});
-        }
-        // Nếu user tồn tại mà không update được => không có gì thay đổi hoặc lỗi khác
-        console.log(`Update called for user ${userIdToUpdate} but no rows affected.`);
-         // Có thể trả về 200 với user hiện tại hoặc lỗi tùy logic
-         return res.status(200).json({ message: 'Profile update requested, but no changes were applied.', user: userExists});
-      }
-
-      // 6. Lấy lại thông tin user đã cập nhật để trả về
-      const updatedUser = await UserModel.findById(userIdToUpdate);
-      if (!updatedUser) {
-         // Lỗi không mong muốn nếu update thành công mà không tìm lại được
-         console.error(`Failed to fetch updated profile for userId: ${userIdToUpdate}`);
-         // Nếu dùng AppError: throw new AppError('Could not retrieve updated profile', 500);
-          return res.status(500).json({ message: 'Could not retrieve updated profile'});
-      }
-
-      console.log(`Successfully updated profile for userId: ${userIdToUpdate}`);
       res.status(200).json({
-        message: 'Profile updated successfully',
-        user: updatedUser // UserModel.findById đã bỏ hash
+        message: 'Profile details updated successfully',
+        ...responsePayload // Send back updated profile_details (and user_core if applicable)
       });
 
     } catch (error) {
-      console.error(`Error updating profile for userId ${req.params.userId}:`, error);
-      next(error); // Chuyển lỗi đến error handler
+      console.error(`Error in updateUserProfileDetails for userId ${req.params.userId}:`, error);
+      next(error);
     }
-  }
+  },
 
-  // Thêm các hàm controller khác nếu cần
+
+  // --- Education Controllers ---
+  async addEducationEntry(req, res, next) {
+    try {
+      const userId = parseInt(req.params.userId, 10);
+      const educationData = req.body;
+      const loggedInUser = req.user;
+
+      if (isNaN(userId)) {
+        return res.status(400).json({ message: 'Invalid User ID format' });
+      }
+      if (!loggedInUser || loggedInUser.user_id !== userId) {
+        return res.status(403).json({ message: 'Forbidden: You can only add education to your own profile' });
+      }
+      if (!educationData || Object.keys(educationData).length === 0) {
+        return res.status(400).json({ message: 'No education data provided' });
+      }
+
+      // Validate and filter educationData fields
+      const allowedEducationFields = [
+        'school_name', 'degree', 'field_of_study',
+        'start_date', 'end_date', 'description'
+      ];
+      const filteredData = filterAllowedFields(educationData, allowedEducationFields);
+      if (!filteredData.school_name) { // Example: school_name is mandatory
+          return res.status(400).json({ message: 'School name is required.' });
+      }
+
+      const newEducation = await UserModel.addEducation(userId, filteredData);
+      res.status(201).json(newEducation); // Return the created education entry
+
+    } catch (error) {
+      console.error(`Error in addEducationEntry for userId ${req.params.userId}:`, error);
+      next(error);
+    }
+  },
+
+  async updateEducationEntry(req, res, next) {
+    try {
+      const userId = parseInt(req.params.userId, 10);
+      const educationId = parseInt(req.params.educationId, 10);
+      const educationData = req.body;
+      const loggedInUser = req.user;
+
+      if (isNaN(userId) || isNaN(educationId)) {
+        return res.status(400).json({ message: 'Invalid ID format' });
+      }
+      if (!loggedInUser || loggedInUser.user_id !== userId) {
+        return res.status(403).json({ message: 'Forbidden: You can only update your own education entries' });
+      }
+      if (!educationData || Object.keys(educationData).length === 0) {
+        return res.status(400).json({ message: 'No education data provided for update' });
+      }
+
+      // Verify ownership of the education entry before updating
+      const existingEducation = await UserModel.findEducationByIdAndUserId(educationId, userId);
+      if (!existingEducation) {
+        return res.status(404).json({ message: 'Education entry not found or you do not have permission to edit it.' });
+      }
+
+      const allowedEducationFields = [
+        'school_name', 'degree', 'field_of_study',
+        'start_date', 'end_date', 'description'
+      ];
+      const filteredData = filterAllowedFields(educationData, allowedEducationFields);
+      // Add any specific validation for update if needed
+
+      const updatedEducation = await UserModel.updateEducation(educationId, filteredData);
+      if (!updatedEducation) {
+          return res.status(404).json({ message: 'Education entry not found during update (should not happen if previous check passed)'})
+      }
+      res.status(200).json(updatedEducation);
+
+    } catch (error) {
+      console.error(`Error in updateEducationEntry for eduId ${req.params.educationId}:`, error);
+      next(error);
+    }
+  },
+
+  async deleteEducationEntry(req, res, next) {
+    try {
+      const userId = parseInt(req.params.userId, 10);
+      const educationId = parseInt(req.params.educationId, 10);
+      const loggedInUser = req.user;
+
+      if (isNaN(userId) || isNaN(educationId)) {
+        return res.status(400).json({ message: 'Invalid ID format' });
+      }
+      if (!loggedInUser || loggedInUser.user_id !== userId) {
+        return res.status(403).json({ message: 'Forbidden: You can only delete your own education entries' });
+      }
+
+      // Verify ownership
+      const existingEducation = await UserModel.findEducationByIdAndUserId(educationId, userId);
+      if (!existingEducation) {
+        return res.status(404).json({ message: 'Education entry not found or you do not have permission to delete it.' });
+      }
+
+      await UserModel.deleteEducation(educationId);
+      res.status(200).json({ message: 'Education entry deleted successfully' }); // Or 204 No Content
+
+    } catch (error) {
+      console.error(`Error in deleteEducationEntry for eduId ${req.params.educationId}:`, error);
+      next(error);
+    }
+  },
+
+
+  // The old getUserProfile and updateUserProfile methods from your original file
+  // are now effectively replaced by getUserFullProfile and updateUserProfileDetails.
+  // You can remove them or adapt them if they serve a different purpose.
+  // For clarity, I'm commenting them out here. If you need to keep the old updateUserProfile
+  // for direct updates to 'users' table, rename it (e.g., updateUserCore) and keep its route.
+
+  /*
+  async getUserProfile(req, res, next) { ... old code ... },
+  async updateUserProfile(req, res, next) { ... old code ... }
+  */
+
 };
