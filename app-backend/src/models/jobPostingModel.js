@@ -64,7 +64,7 @@ module.exports = {
     }
 
     // Default ordering
-    query = query.orderBy('posting_date', 'desc');
+    query = query.orderBy('created_at', 'desc');
 
     return query.select('*');
   },

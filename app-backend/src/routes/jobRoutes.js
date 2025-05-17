@@ -1,16 +1,16 @@
 const express = require('express');
 const jobController = require('../controllers/ManageJobPostingController');
-const { BadRequestError, NotFoundError } = require('../utils/errors'); 
+const newsfeedController = require('../controllers/newsfeedController');
 const applyController = require('../controllers/applyController'); 
 const { authenticateJWT, hasRole } = require('../middleware/authMiddleware');
 const { applicationLimiter, uploadLimiter } = require('../middleware/rateLimiter');
 const router = express.Router();
 
 // PUBLIC: Anyone can see job listings
-router.get('/jobs', jobController.getAllJobs);
+router.get('/jobs', newsfeedController.getAllJobs);
 
 // PUBLIC: Anyone can view job detail
-router.get('/jobs/:jobId', jobController.getJobById);
+router.get('/jobs/:jobId', newsfeedController.getJobById);
 
 // PROTECTED: Only authenticated JobSeekers can apply
 router.post(
@@ -25,7 +25,7 @@ router.post(
 
 // PROTECTED: Only authenticated Recruiters can perform job management
 router.post(
-  '/jobs',
+  '/recruiter/job-postings',
   authenticateJWT,
   hasRole(['Recruiter']),
   jobController.createJob

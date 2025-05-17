@@ -1,113 +1,188 @@
-const knex = require('knex');
-const multer = require('multer');
-const { BadRequestError, NotFoundError } = require('../utils/errors'); // Custom error handlers
+const { body, param, validationResult } = require('express-validator');
+const xss = require('xss');
+const validator = require('validator');
+const db = require('../config/database'); 
+const JobPosting = require('../models/jobPostingModel');
+const { BadRequestError, NotFoundError } = require('../utils/errors');
 
-const db = require('../config/database');
-
-// Setup multer for file uploads (CV)
-const upload = multer({ dest: 'uploads/' });
-
-// Export middleware for file uploads
-exports.uploadResume = upload.single('resume');
-
-// =================== 1. View/Search Job Postings ===================
-exports.getAllJobs = async (req, res, next) => {
-  try {
-    const { title, location, type } = req.query;
-    let query = db('job_postings').where('status', 'Open'); 
-
-    if (title) query = query.where('title', 'ILIKE', `%${title}%`);
-    if (location) query = query.where('location', 'ILIKE', `%${location}%`);
-    if (type) query = query.where('job_type', '=', type);
-
-    const jobPostings = await query;
-    res.status(200).json(jobPostings);
-  } catch (error) {
-    console.error('Detailed error fetching jobs:', error.message, error.stack);
-    next(new BadRequestError(`Unable to fetch job postings: ${error.message}`));
-  }
+// Custom XSS configuration
+const xssOptions = {
+  whiteList: {},  // No tags allowed
+  stripIgnoreTag: true,
+  stripIgnoreTagBody: ['script', 'style']
 };
 
-
-// =================== 2. View specific Job details (Optimized for Frontend) ===================
-exports.getJobById = async (req, res, next) => {
-  try {
-    const { jobId } = req.params;
-
-    // Validate jobId format (basic validation)
-    if (isNaN(parseInt(jobId, 10))) {
-        return next(new BadRequestError('Invalid Job ID format.'));
-    }
-
-    const jobPosting = await db('job_postings')
-      .leftJoin('users as recruiter_users', 'job_postings.recruiter_id', 'recruiter_users.user_id') // Join with users table for recruiter info
-      .where({
-        'job_postings.job_posting_id': jobId,
-        // For public view, only 'Open' jobs are shown.
-        'job_postings.status': 'Open'
-      })
-      .select(
-        'job_postings.job_posting_id',
-        'job_postings.title',
-        'job_postings.description',
-        'job_postings.location',
-        'job_postings.job_type',
-        'job_postings.status',
-        'job_postings.created_at',
-        'job_postings.updated_at',
-        'job_postings.closing_date',
-        'job_postings.recruiter_id', 
-      )
-      .first(); // Since we expect only one job or none
-
-    if (!jobPosting) {
-      // It's important to let the frontend know if the job is not found OR not 'Open' for public view
-      return next(new NotFoundError('Job posting not found or is not currently open.'));
-    }
-
-
-    res.status(200).json(jobPosting);
-  } catch (error) {
-    console.error('Error fetching job details by ID:', error);
-    next(new BadRequestError('An error occurred while fetching job details.'));
-  }
+// Input sanitization middleware
+const sanitizeInput = (input) => {
+  if (typeof input !== 'string') return '';
+  return validator.escape(xss(input.trim(), xssOptions));
 };
 
+// =================== 1. Recruiter: Create Job Posting ===================
+exports.createJob = [
+  // Input validation chain
+  body('title') // Targets the 'title' field in the request body (req.body.title)
+    .isString() 
+    .notEmpty() // Validates that 'title' is not an empty string (after default trimming by express-validator).
+    .isLength({ min: 3, max: 100 }) 
+    .matches(/^[a-zA-Z0-9\s\-_.,!?()]+$/) // Validates that 'title' only contains alphanumeric characters, spaces, and specific punctuation.
+    .withMessage('Title must be 3-100 characters and contain only valid characters') // Custom error message if any of the above 'title' validations fail.
+    .trim() // Sanitizer: removes leading/trailing whitespace from 'title'.
+    .escape(), // Sanitizer: escapes HTML special characters in 'title' (e.g., '<' becomes '<') to prevent XSS.
 
-// =================== 3. Recruiter: Create Job Posting ===================
-exports.createJob = async (req, res, next) => {
-  try {
-    // Extract fields from request body
-    const { title, description, location } = req.body;
-    
-    // Handle the job type field - could be sent as either "job_type" or "type"
-    const jobType = req.body.job_type || req.body.type;
+  body('description') // Targets the 'description' field in the request body.
+    .isString() 
+    .notEmpty() 
+    .isLength({ min: 10, max: 1000 }) 
+    .withMessage('Description must be 10-1000 characters') 
+    .trim() // Sanitizer: removes leading/trailing whitespace.
+    .escape(), // Sanitizer: escapes HTML special characters.
 
-    // Validate required fields
-    if (!title || !description || !location || !jobType) {
-      return next(new BadRequestError('All fields are required: title, description, location, and job type'));
+  body('location') // Targets the 'location' field in the request body.
+    .isString() // Validates that 'location' is a string.
+    .notEmpty() // Validates that 'location' is not an empty string.
+    .isLength({ min: 2, max: 100 }) // Validates 'location' length.
+    .matches(/^[a-zA-Z0-9\s\-_,()]+$/) // Validates 'location' for allowed characters.
+    .withMessage('Location must be 2-100 characters and contain only valid characters') // Custom error message for 'location'.
+    .trim() // Sanitizer: removes leading/trailing whitespace.
+    .escape(), // Sanitizer: escapes HTML special characters.
+
+  body('job_type') // Targets the 'job_type' field in the request body.
+    .isIn(['FullTime', 'PartTime', 'Contract']) 
+    .withMessage('Invalid job type') // Custom error message if 'job_type' is not one of the allowed values.
+    .trim(), // Sanitizer: removes leading/trailing whitespace. This is important for .isIn to work correctly if " FullTime " is sent.
+
+  // Main function
+  async (req, res, next) => {
+    try {
+      // Validate input
+      const errors = validationResult(req); // Collects any validation errors from the chains above.
+      if (!errors.isEmpty()) { // Checks if there were any validation errors.
+        return next(new BadRequestError(errors.array()[0].msg)); // If errors, pass the first error message to the error handler.
+      }
+
+      // Verify user authentication and authorization
+      if (!req.user?.user_id || req.user?.role !== 'Recruiter') {
+        return next(new BadRequestError('Unauthorized: Only recruiters can create jobs'));
+      }
+
+      const jobData = {
+
+        title: req.body.title, // Value is already trimmed and escaped by express-validator
+        description: req.body.description, // Value is already trimmed and escaped by express-validator
+        location: req.body.location, // Value is already trimmed and escaped by express-validator
+        job_type: req.body.job_type, // Value is already trimmed by express-validator
+        recruiter_id: req.user.user_id
+      };
+  
+
+      const newJobPosting = await JobPosting.create(jobData);
+
+      if (!newJobPosting) {
+        throw new Error('Failed to create job posting');
+      }
+
+      res.status(201).json({
+        message: 'Job posting created successfully',
+        job: newJobPosting
+      });
+
+    } catch (error) {
+      console.error('Error creating job posting:', error);
+      next(new BadRequestError('Unable to create job posting'));
     }
-
-    // Insert the new job posting - ensure job_type field name matches the database column
-    const [newJobPosting] = await db('job_postings').insert({
-      title,
-      description,
-      location,
-      job_type: jobType, // Map to job_type column in database
-      recruiter_id: req.user, 
-      status: 'Open',
-      created_at: new Date(),
-      updated_at: new Date(),
-    }).returning('*');
-
-    res.status(201).json(newJobPosting);
-  } catch (error) {
-    console.error('Error creating job posting:', error);
-    next(new BadRequestError('Unable to create job posting: ' + error.message));
   }
-};
+];
 
-// =================== 4. Recruiter: View Their Job Postings ===================
+// =================== 2. Recruiter: Update Job Posting by ID ===================
+exports.updateJob = [
+  // Validate URL parameter
+  param('jobId') // Targets the 'jobId' parameter in the URL path (e.g., /jobs/:jobId)
+    .isInt({ min: 1 }) // Validates that 'jobId' is an integer and its value is at least 1.
+    .withMessage('Invalid job ID') // Custom error message if 'jobId' is not a valid integer >= 1.
+    .toInt(), // Sanitizer: converts the validated 'jobId' string from the URL param into an integer.
+
+  // Validate body fields
+  body('title')
+    .isString()
+    .isLength({ min: 3, max: 100 })
+    .matches(/^[a-zA-Z0-9\s\-_.,!?()]+$/)
+    .withMessage('Title must be 3-100 characters and contain only valid characters')
+    .trim()
+    .escape(), 
+
+  body('description')
+    .isString()
+    .isLength({ min: 10, max: 1000 })
+    .withMessage('Description must be 10-1000 characters')
+    .trim()
+    .escape(), 
+
+  body('location')
+    .isString()
+    .isLength({ min: 2, max: 100 })
+    .matches(/^[a-zA-Z0-9\s\-_,()]+$/)
+    .withMessage('Location must be 2-100 characters and contain only valid characters')
+    .trim()
+    .escape(), 
+
+  body('job_type')
+    .isIn(['FullTime', 'PartTime', 'Contract'])
+    .withMessage('Invalid job type')
+    .trim(), 
+
+  async (req, res, next) => {
+    try {
+      // Validate input
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return next(new BadRequestError(errors.array()[0].msg));
+      }
+
+      const { jobId } = req.params; // This is now an integer thanks to .toInt()
+
+      // Corrected authorization logic:
+      if (!req.user?.user_id || req.user?.role !== 'Recruiter') {
+        return next(new BadRequestError('Unauthorized: Only recruiters can update jobs'));
+      }
+
+      const existingJob = await JobPosting.findById(jobId);
+
+      if (!existingJob) {
+        return next(new NotFoundError('Job posting not found'));
+      }
+
+      if (existingJob.recruiter_id !== req.user.user_id) {
+        return next(new BadRequestError('Unauthorized: You can only update your own job postings'));
+      }
+
+      // Prepare update data. Values from req.body are already sanitized by express-validator.
+      const updateData = {};
+      if (req.body.title) updateData.title = req.body.title; // Already trimmed and escaped
+      if (req.body.description) updateData.description = req.body.description; // Already trimmed and escaped
+      if (req.body.location) updateData.location = req.body.location; // Already trimmed and escaped
+      if (req.body.job_type) updateData.job_type = req.body.job_type; // Already trimmed
+
+      // Use model to update
+      const updated = await JobPosting.update(jobId, updateData);
+
+      if (!updated) {
+        throw new Error('Failed to update job posting'); // Or use a more specific error if update returns 0 rows affected
+      }
+
+      res.status(200).json({
+        message: 'Job posting updated successfully',
+        jobId: jobId
+      });
+
+    } catch (error) {
+      console.error('Error updating job:', error);
+      next(new BadRequestError('Unable to update job posting'));
+    }
+  }
+];
+
+// =================== 3. Recruiter: View Their Job Postings ===================
 exports.getRecruiterJobs = async (req, res, next) => {
   try {
     const { userId } = req.user; 
@@ -123,40 +198,7 @@ exports.getRecruiterJobs = async (req, res, next) => {
   }
 };
 
-// =================== 5. Recruiter: Edit Job Posting ===================
-exports.updateJob = async (req, res, next) => {
-  try {
-    const { jobId } = req.params;
-    const { title, description, location } = req.body;
-    
-    // Handle the job type field - could be sent as either "job_type" or "type"
-    const jobType = req.body.job_type || req.body.type;
-
-    // Validate job posting
-    const job = await db('job_postings').where('job_posting_id', jobId).first();
-    if (!job) {
-      return next(new NotFoundError('Job posting not found'));
-    }
-
-    // Update the job posting
-    await db('job_postings')
-      .where('job_posting_id', jobId)
-      .update({ 
-        title, 
-        description, 
-        location, 
-        job_type: jobType, // Ensure job_type field name matches database column
-        updated_at: new Date() 
-      });
-
-    res.status(200).json({ message: 'Job posting updated successfully' });
-  } catch (error) {
-    console.error('Error updating job:', error);
-    next(new BadRequestError('Unable to update job posting: ' + error.message));
-  }
-};
-
-// =================== 6. Recruiter: Close Job Posting ===================
+// =================== 4. Recruiter: Close Job Posting ===================
 exports.closeJob = async (req, res, next) => {
   try {
     const { jobId } = req.params;
@@ -178,7 +220,7 @@ exports.closeJob = async (req, res, next) => {
   }
 };
 
-// =================== 7. Recruiter: View Candidates ===================
+// =================== 5. Recruiter: View Candidates ===================
 exports.getCandidates = async (req, res, next) => {
   try {
     const { jobId } = req.params;
@@ -201,7 +243,7 @@ exports.getCandidates = async (req, res, next) => {
   }
 };
 
-// =================== 8. Recruiter: Update Candidate Status ===================
+// =================== 6. Recruiter: Update Candidate Status ===================
 exports.updateCandidateStatus = async (req, res, next) => {
   try {
     const { candidateId } = req.params;
@@ -222,7 +264,7 @@ exports.updateCandidateStatus = async (req, res, next) => {
   }
 };
 
-// =================== 9. Recruiter: Delete Job Posting at DELETE /api/recruiter/job-postings/:jobId ===================
+// =================== 7. Recruiter: Delete Job Posting at DELETE /api/recruiter/job-postings/:jobId ===================
 exports.deleteJob = async (req, res, next) => {
   try {
     const { jobId } = req.params;
