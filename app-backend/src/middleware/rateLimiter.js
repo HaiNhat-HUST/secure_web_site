@@ -1,19 +1,29 @@
 const rateLimit = require('express-rate-limit');
 
-exports.applicationLimiter = rateLimit({
-  windowMs: 24 * 60 * 60 * 1000, // 24 hours
-  max: 10, // limit each user to 10 applications per day
-  message: 'Too many applications submitted. Please try again in 24 hours.',
+// For resume uploads during job applications
+exports.uploadLimiter = rateLimit({
+  windowMs: 12 * 60 * 60 * 1000, // 24 hours
+  max: 5, // 5 uploads per 12 hours
+  message: {
+    status: 429,
+    message: 'You have exceeded the file upload limit. Please try again later.'
+  },
   standardHeaders: true,
   legacyHeaders: false,
-  keyGenerator: (req) => req.user?.userId || req.ip, // Rate limit by user ID if authenticated, IP otherwise
-  skip: (req) => req.user?.role === 'Recruiter' // Skip rate limiting for recruiters
+  keyGenerator: (req) => req.user?.user_id || req.ip,
+  skipFailedRequests: true // Don't count failed uploads against limit
 });
 
-exports.uploadLimiter = rateLimit({
-  windowMs: 60 * 60 * 1000, // 1 hour
-  max: 20, // limit each IP to 20 file uploads per hour
-  message: 'Too many file uploads. Please try again in an hour.',
+
+// Application submission limiter (includes resume upload)
+exports.applicationLimiter = rateLimit({
+  windowMs: 24 * 60 * 60 * 1000, // 24 hours
+  max: 10, // 10 applications per day
+  message: {
+    status: 429,
+    message: 'Daily application limit reached. Please try again tomorrow.'
+  },
   standardHeaders: true,
-  legacyHeaders: false
+  legacyHeaders: false,
+  keyGenerator: (req) => req.user?.user_id
 });

@@ -1,13 +1,44 @@
 const db = require('../config/database');
 const { BadRequestError, NotFoundError } = require('../utils/errors');
+const validator = require('validator');
 
 // =================== 1. View Job Postings ===================
 exports.getAllJobs = async (req, res, next) => {
   try {
-    const { title, location, type } = req.query;
+    // Input validation and sanitization for search parameters
+    let { title, location, type } = req.query;
     const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
     const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 12, 1), 100);
     const offset = (page - 1) * limit;
+
+    // Validate and sanitize title
+    if (title && typeof title === 'string') {
+      title = validator.trim(title);
+      // Only allow letters, numbers, spaces, and basic punctuation
+      if (!validator.isLength(title, { min: 0, max: 100 }) ||
+          !/^[a-zA-Z0-9\s\-_,.?!()]*$/.test(title)) {
+        return next(new BadRequestError('Invalid title search input.'));
+      }
+      title = validator.escape(title);
+    }
+
+    // Validate and sanitize location
+    if (location && typeof location === 'string') {
+      location = validator.trim(location);
+      if (!validator.isLength(location, { min: 0, max: 100 }) ||
+          !/^[a-zA-Z0-9\s\-_,()]*$/.test(location)) {
+        return next(new BadRequestError('Invalid location search input.'));
+      }
+      location = validator.escape(location);
+    }
+
+    // Validate type
+    if (type && typeof type === 'string') {
+      type = validator.trim(type);
+      if (!['FullTime', 'PartTime', 'Contract', ''].includes(type)) {
+        return next(new BadRequestError('Invalid job type.'));
+      }
+    }
 
     // Build query
     let jobsQuery = db('job_postings')
@@ -23,15 +54,15 @@ exports.getAllJobs = async (req, res, next) => {
         'users.username as recruiter_display_name'
       );
 
-    // Filtering (cross-db compatible)
-    if (title && title.trim() !== '') {
-      jobsQuery = jobsQuery.whereRaw('LOWER(job_postings.title) LIKE ?', [`%${title.trim().toLowerCase()}%`]);
+    // Filtering (safe, parameterized)
+    if (title) {
+      jobsQuery = jobsQuery.whereRaw('LOWER(job_postings.title) LIKE ?', [`%${title.toLowerCase()}%`]);
     }
-    if (location && location.trim() !== '') {
-      jobsQuery = jobsQuery.whereRaw('LOWER(job_postings.location) LIKE ?', [`%${location.trim().toLowerCase()}%`]);
+    if (location) {
+      jobsQuery = jobsQuery.whereRaw('LOWER(job_postings.location) LIKE ?', [`%${location.toLowerCase()}%`]);
     }
-    if (type && type.trim() !== '') {
-      jobsQuery = jobsQuery.where('job_postings.job_type', type.trim());
+    if (type) {
+      jobsQuery = jobsQuery.where('job_postings.job_type', type);
     }
 
     // Clone for count

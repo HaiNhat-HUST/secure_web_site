@@ -17,9 +17,7 @@ router.post(
   '/jobs/apply/:jobId',
   authenticateJWT,
   hasRole(['JobSeeker']),
-  applicationLimiter, // application rate limiting
-  uploadLimiter,     // upload rate limiting
-  applyController.uploadResume,
+  applicationLimiter,
   applyController.applyForJob
 );
 

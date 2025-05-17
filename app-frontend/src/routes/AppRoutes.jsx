@@ -23,7 +23,7 @@ const AppRoutes = () => {
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
-        <Route path="/role-selection" element={<RoleSelection />} />
+        <Route path="/select-role" element={<RoleSelection />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
         <Route path="/newfeeds" element={<JobNewsfeed />} />
         <Route path="/jobs/:jobId" element={<JobDetail />} />
