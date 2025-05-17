@@ -23,6 +23,8 @@
     "express": "^5.1.0",
     "express-rate-limit": "^7.5.0",
     "express-session": "^1.18.1",
+    "express-validator": "^7.2.1",
+    "he": "^1.2.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.2",
     "knex": "^3.1.0",
@@ -32,7 +34,8 @@
     "passport-google-oauth20": "^2.0.0",
     "passport-local": "^1.0.0",
     "pg": "^8.14.1",
-    "sequelize": "^6.37.1"
+    "sequelize": "^6.37.1",
+    "xss": "^1.0.15"
   },
   "devDependencies": {
     "nodemailer": "^7.0.3",
