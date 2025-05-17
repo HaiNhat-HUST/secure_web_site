@@ -54,7 +54,8 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Protected routes - using job routes correctly
 app.use(API_PREFIX, jobRoutes);
-app.use(`${API_PREFIX}/profile`, authenticateJWT, hasRoleAssigned, profileRoutes);
+
+app.use(`${API_PREFIX}/profiles`, authenticateJWT, hasRoleAssigned, profileRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {

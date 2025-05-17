@@ -34,6 +34,7 @@ const AppRoutes = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           {/* Trang Profile của người dùng hiện tại */}
           <Route path="/profile" element={<Profile />} />
+          {/*<Route path="/profile/:userId" element={<Profile />} />*/}
         </Route>
       </Route>
 
