@@ -179,90 +179,122 @@ exports.updateJob = [
       console.error('Error updating job:', error);
       next(new BadRequestError('Unable to update job posting'));
     }
+
   }
 ];
 
 // =================== 3. Recruiter: View Their Job Postings ===================
 exports.getRecruiterJobs = async (req, res, next) => {
   try {
+
     const { userId } = req.user; 
 
     const jobPostings = await db('job_postings').where('recruiter_id', userId);
     if (jobPostings.length === 0) {
       return res.status(200).json([]); // Return empty array instead of error
-    }
 
+    }
+    const recruiter_id = req.user.userId;
+    const { status } = req.query; // Allow filtering by status
+
+    const jobPostings = await jobPostingModel.findByRecruiterId(recruiter_id, { status });
     res.status(200).json(jobPostings);
   } catch (error) {
-    next(new BadRequestError('Unable to fetch job postings'));
+    console.error('Error fetching recruiter jobs:', error);
+    next(new BadRequestError('Unable to fetch recruiter job postings.'));
   }
 };
+
 
 // =================== 4. Recruiter: Close Job Posting ===================
 exports.closeJob = async (req, res, next) => {
   try {
-    const { jobId } = req.params;
+    const { jobId: job_posting_id } = req.params;
+    if (!req.user || !req.user.userId) {
+      return next(new BadRequestError('User authentication required.'));
+    }
+    const recruiter_id = req.user.userId;
 
-    // Validate job posting
-    const job = await db('job_postings').where('job_posting_id', jobId).first();
-    if (!job) {
-      return next(new NotFoundError('Job posting not found'));
+    const job = await jobPostingModel.findById(job_posting_id); // Basic find to check existence
+    if (!job || job.recruiter_id !== recruiter_id) { // Check ownership
+        return next(new NotFoundError('Job posting not found or you are not authorized to close it.'));
+    }
+    if (job.status === 'Closed') {
+        return res.status(200).json({ message: 'Job posting is already closed.' });
     }
 
-    // Close the job posting
-    await db('job_postings')
-      .where('job_posting_id', jobId)
-      .update({ status: 'Closed', closing_date: new Date() });
+    const updatedCount = await jobPostingModel.updateStatus(job_posting_id, recruiter_id, 'Closed');
 
-    res.status(200).json({ message: 'Job post closed successfully' });
+    if (updatedCount === 0) {
+      // This might happen if the job was deleted/changed by another process between find and update,
+      // or if the recruiter_id check in updateStatus failed (though we check ownership above).
+      return next(new NotFoundError('Close operation failed. Job may no longer exist or you lack permission.'));
+    }
+    res.status(200).json({ message: 'Job posting closed successfully.' });
   } catch (error) {
-    next(new BadRequestError('Unable to close job post'));
+    console.error('Error closing job:', error);
+    next(new BadRequestError('Unable to close job posting.'));
   }
 };
 
 // =================== 5. Recruiter: View Candidates ===================
 exports.getCandidates = async (req, res, next) => {
   try {
-    const { jobId } = req.params;
+    const { jobId: job_posting_id } = req.params;
+    if (!req.user || !req.user.userId) {
+      return next(new BadRequestError('User authentication required.'));
+    }
+    const recruiter_id = req.user.userId;
 
-    // Validate job posting
-    const job = await db('job_postings').where('job_posting_id', jobId).first();
-    if (!job) {
-      return next(new NotFoundError('Job posting not found'));
+    const job = await jobPostingModel.findById(job_posting_id);
+    if (!job || job.recruiter_id !== recruiter_id) {
+      return next(new NotFoundError('Job posting not found or you are not authorized to view its candidates.'));
     }
 
-    // Get applicants for this job posting
-    const applicants = await db('applications')
-      .join('users', 'applications.job_seeker_id', '=', 'users.user_id')
-      .where('applications.job_posting_id', jobId)
-      .select('users.username', 'applications.status', 'applications.resume_snapshot');
-
+    // Assuming you have an applicationModel.js with findByJobPostingId
+    // const applicationModel = require('../models/applicationModel'); // Make sure it's imported
+    const applicants = await applicationModel.findByJobPostingId(job_posting_id);
     res.status(200).json(applicants);
   } catch (error) {
-    next(new BadRequestError('Unable to fetch candidates'));
+    console.error('Error fetching candidates:', error);
+    next(new BadRequestError('Unable to fetch candidates.'));
   }
 };
 
 // =================== 6. Recruiter: Update Candidate Status ===================
 exports.updateCandidateStatus = async (req, res, next) => {
   try {
-    const { candidateId } = req.params;
+    const { applicationId } = req.params;
     const { status } = req.body;
+    if (!req.user || !req.user.userId) {
+      return next(new BadRequestError('User authentication required.'));
+    }
+    const recruiter_id = req.user.userId;
 
-    if (!status || !['New', 'Shortlisted', 'UnderReview'].includes(status)) {
-      return next(new BadRequestError('Invalid status'));
+    const validStatuses = ['New', 'UnderReview', 'Shortlisted', 'Rejected', 'Hired', 'InterviewScheduled'];
+    if (!status || !validStatuses.includes(status)) {
+      return next(new BadRequestError(`Invalid status. Must be one of: ${validStatuses.join(', ')}`));
     }
 
-    // Update candidate status
-    await db('applications')
-      .where('job_seeker_id', candidateId)
-      .update({ status, updated_at: new Date() });
+    // Verify application exists and belongs to a job managed by this recruiter
+    // const applicationModel = require('../models/applicationModel'); // Make sure it's imported
+    const applicationToVerify = await applicationModel.findByIdAndRecruiterJob(applicationId, recruiter_id);
+    if (!applicationToVerify) {
+      return next(new NotFoundError('Application not found or you are not authorized to update its status.'));
+    }
 
-    res.status(200).json({ message: 'Candidate status updated successfully' });
+    const updatedCount = await applicationModel.updateStatus(applicationId, status);
+    if (updatedCount === 0) {
+      return next(new BadRequestError('Failed to update candidate status.'));
+    }
+
+    res.status(200).json({ message: 'Candidate status updated successfully.' });
   } catch (error) {
-    next(new BadRequestError('Unable to update candidate status'));
-  }
+    console.error('Error updating candidate status:', error);
+    next(new BadRequestError('Unable to update candidate status.'));
+    }
 };
+
 
 // =================== 7. Recruiter: Delete Job Posting at DELETE /api/recruiter/job-postings/:jobId ===================
 exports.deleteJob = async (req, res, next) => {
@@ -277,22 +309,21 @@ exports.deleteJob = async (req, res, next) => {
     }
     if (job.recruiter_id !== userId) {
       return next(new BadRequestError('Unauthorized: You can only delete your own job postings'));
-    }
 
-    // Delete the job posting
-    const deletedRows = await db('job_postings')
-      .where('job_posting_id', jobId)
-      .delete();
+    }
+    const recruiter_id = req.user.userId;
+
+    const deletedRows = await jobPostingModel.delete(job_posting_id, recruiter_id);
 
     if (deletedRows === 0) {
-      return next(new BadRequestError('Failed to delete job posting'));
+      return next(new NotFoundError('Job posting not found, you are not authorized to delete it, or delete failed.'));
     }
 
-    res.status(204).send(); // No content for successful deletion
+    res.status(204).send();
   } catch (error) {
     console.error('Error deleting job posting:', error);
-    if (error.code === '23503') { // PostgreSQL foreign key violation
-      return next(new BadRequestError('Cannot delete job posting with existing applications'));
+    if (error.code === '23503') {
+      return next(new BadRequestError('Cannot delete job posting due to existing references (e.g., applications).'));
     }
     next(new BadRequestError('Unable to delete job posting: ' + error.message));
   }

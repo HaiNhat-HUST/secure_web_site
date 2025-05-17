@@ -50,7 +50,7 @@ const upload = multer({
 
 exports.uploadResume = upload.single('resume');
 
-// Main application logic
+
 exports.applyForJob = async (req, res, next) => {
   let trx;
   try {
@@ -59,6 +59,7 @@ exports.applyForJob = async (req, res, next) => {
     const resume = req.file;
 
     if (!resume) {
+
       console.error('[ApplyForJob] No resume file uploaded');
       return next(new BadRequestError('Resume file is required and must be PDF, DOC, or DOCX'));
     }
@@ -87,6 +88,7 @@ exports.applyForJob = async (req, res, next) => {
     const alreadyApplied = await trx('applications')
       .where({ job_seeker_id: userId, job_posting_id: jobId })
       .first();
+
     if (alreadyApplied) {
       console.warn(`[ApplyForJob] Duplicate application: userId=${userId}, jobId=${jobId}`);
       await fs.unlink(resume.path).catch(() => {});
