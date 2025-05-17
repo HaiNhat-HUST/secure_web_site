@@ -4,10 +4,10 @@ const db = require('../config/database'); // Your Knex instance
 TABLE_NAME = "users"
 
 module.exports = {
-  // ... your existing findById, findByEmail, create, update for 'users' table ...
 
-  async findById(user_id) {
-    return db(TABLE_NAME).where({ user_id: user_id }).first(); // .first() để lấy 1 bản ghi hoặc undefined
+  async findById(userId) {
+    return db(TABLE_NAME).where({ user_id: userId }).first(); 
+
   },
 
   async findByUsername(username) {
@@ -23,15 +23,15 @@ module.exports = {
   },
 
   async create(userData) {
-    // userData nên chứa các trường đã được chuẩn bị (vd: password đã hash)
-    const [newUserId] = await db(TABLE_NAME).insert(userData).returning('user_id'); // returning để lấy ID vừa tạo
-    return this.findById(newUserId.user_id || newUserId); // Lấy lại user vừa tạo để trả về đầy đủ thông tin
+    const [newUserId] = await db(TABLE_NAME).insert(userData).returning('user_id');
+    return this.findById(newUserId.user_id || newUserId); 
   },
 
-  async update(user_id, updateData) {
-    // updateData không nên chứa passwordHash trừ khi đang cập nhật password
-    updateData.updated_at = new Date(); // Cập nhật thời gian
-    return db(TABLE_NAME).where({ user_id: user_id }).update(updateData).returning('*');
+  async update(userId, updateData) {
+    
+    updateData.updated_at = new Date();
+    return db(TABLE_NAME).where({ user_id: userId }).update(updateData).returning('*');
+
   },
 
   async updateByEmail(email, updateData) {
@@ -145,4 +145,10 @@ module.exports = {
       .where({ education_id: educationId, user_id: user_id })
       .first();
   }
+
+  async updatePassword(email, password_hash){
+     return db(TABLE_NAME).where({ email }).update({password_hash, updated_at: new Date()});
+  }
+
 };
+

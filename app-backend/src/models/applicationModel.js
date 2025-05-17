@@ -42,7 +42,7 @@ module.exports = {
   async findByJobPostingId(jobPostingId) {
     return db(TABLE_NAME)
       .where({ job_posting_id: jobPostingId })
-      .orderBy('submission_date', 'asc') // Or desc?
+      .orderBy('submission_date', 'desc') 
       .select('*');
   },
 
