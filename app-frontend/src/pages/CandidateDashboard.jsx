@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext'; // Corrected path if needed
 import { fetchFromAPI } from '../api/serveAPI';
-import StatCard from '../components/dashboard/StatCard';
-import RecentApplicationsList from '../components/dashboard/RecentApplicationsList';
+import StatCard from '../components/Dashboard/StatCard';
+import RecentApplicationsList from '../components/Dashboard/RecentApplicationsList';
 // import { Bar } from 'react-chartjs-2';
 // import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js';
 
@@ -26,10 +26,9 @@ const CandidateDashboard = () => {
       setIsLoading(true);
       setError(null);
       try {
-        const [summaryRes, recentAppsRes /*, trendsRes*/] = await Promise.allSettled([
+        const [summaryRes, recentAppsRes] = await Promise.allSettled([
           fetchFromAPI('/api/dashboard/my-summary-stats', token),
           fetchFromAPI('/api/dashboard/my-recent-applications?limit=5', token),
-          // fetchFromAPI('/api/dashboard/my-application-trends?period=day', token),
         ]);
 
         if (summaryRes.status === 'fulfilled' && summaryRes.value) {
