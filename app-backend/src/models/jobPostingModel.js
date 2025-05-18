@@ -97,7 +97,8 @@ module.exports = {
       query = query.whereRaw(`LOWER(${TABLE_NAME}.location) LIKE ?`, [`%${filters.location.toLowerCase()}%`]);
     }
 
-    query = query.orderBy(`${TABLE_NAME}.posting_date`, 'desc'); // Or created_at
+    // Default ordering
+    query = query.orderBy('created_at', 'desc');
 
     return query.select(
         `${TABLE_NAME}.job_posting_id`,

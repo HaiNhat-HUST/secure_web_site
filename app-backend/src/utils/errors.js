@@ -26,9 +26,16 @@ class AppError extends Error {
     }
   }
   
+  class InternalServerError extends AppError {
+    constructor(message) {
+      super(message || 'Internal Server Error', 500); // Set default message to 'Internal Server Error' for 500 status
+    }
+  }
+
   module.exports = {
     AppError,
     BadRequestError,
     NotFoundError,
     UnauthorizedError,
+    InternalServerError,
   };

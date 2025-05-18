@@ -1,119 +1,199 @@
-const knex = require('knex');
-const multer = require('multer');
+const { body, param, validationResult } = require('express-validator');
+const xss = require('xss');
+const validator = require('validator');
+const db = require('../config/database'); 
+const JobPosting = require('../models/jobPostingModel');
 const { BadRequestError, NotFoundError } = require('../utils/errors');
-const jobPostingModel = require('../models/jobPostingModel');
-const applicationModel = require('../models/applicationModel');
 
-// Setup multer for file uploads (CV)
-const upload = multer({ dest: 'uploads/' });
+// Custom XSS configuration
+const xssOptions = {
+  whiteList: {},  // No tags allowed
+  stripIgnoreTag: true,
+  stripIgnoreTagBody: ['script', 'style']
+};
 
-// Export middleware for file uploads
-exports.uploadResume = upload.single('resume');
+// Input sanitization middleware
+const sanitizeInput = (input) => {
+  if (typeof input !== 'string') return '';
+  return validator.escape(xss(input.trim(), xssOptions));
+};
 
-// =================== 1. View all Job Postings (Public Newsfeed) ===================
-exports.getAllJobs = async (req, res, next) => {
-  try {
-    const { title, location, type: job_type } = req.query;
-    const filters = { title, location, job_type };
-    // Remove undefined/null filters before passing to model
-    Object.keys(filters).forEach(key => filters[key] === undefined && delete filters[key]);
+// =================== 1. Recruiter: Create Job Posting ===================
+exports.createJob = [
+  // Input validation chain
+  body('title') // Targets the 'title' field in the request body (req.body.title)
+    .isString() 
+    .notEmpty() // Validates that 'title' is not an empty string (after default trimming by express-validator).
+    .isLength({ min: 3, max: 100 }) 
+    .matches(/^[a-zA-Z0-9\s\-_.,!?()]+$/) // Validates that 'title' only contains alphanumeric characters, spaces, and specific punctuation.
+    .withMessage('Title must be 3-100 characters and contain only valid characters') // Custom error message if any of the above 'title' validations fail.
+    .trim() // Sanitizer: removes leading/trailing whitespace from 'title'.
+    .escape(), // Sanitizer: escapes HTML special characters in 'title' (e.g., '<' becomes '<') to prevent XSS.
 
-    // Use the model method for fetching job summaries
-    const jobPostings = await jobPostingModel.findAllOpenWithSummary(filters);
-    res.status(200).json(jobPostings);
-  } catch (error) {
-    console.error('Detailed error fetching jobs:', error.message, error.stack);
-    next(new BadRequestError(`Unable to fetch job postings: ${error.message}`));
+  body('description') // Targets the 'description' field in the request body.
+    .isString() 
+    .notEmpty() 
+    .isLength({ min: 10, max: 1000 }) 
+    .withMessage('Description must be 10-1000 characters') 
+    .trim() // Sanitizer: removes leading/trailing whitespace.
+    .escape(), // Sanitizer: escapes HTML special characters.
+
+  body('location') // Targets the 'location' field in the request body.
+    .isString() // Validates that 'location' is a string.
+    .notEmpty() // Validates that 'location' is not an empty string.
+    .isLength({ min: 2, max: 100 }) // Validates 'location' length.
+    .matches(/^[a-zA-Z0-9\s\-_,()]+$/) // Validates 'location' for allowed characters.
+    .withMessage('Location must be 2-100 characters and contain only valid characters') // Custom error message for 'location'.
+    .trim() // Sanitizer: removes leading/trailing whitespace.
+    .escape(), // Sanitizer: escapes HTML special characters.
+
+  body('job_type') // Targets the 'job_type' field in the request body.
+    .isIn(['FullTime', 'PartTime', 'Contract']) 
+    .withMessage('Invalid job type') // Custom error message if 'job_type' is not one of the allowed values.
+    .trim(), // Sanitizer: removes leading/trailing whitespace. This is important for .isIn to work correctly if " FullTime " is sent.
+
+  // Main function
+  async (req, res, next) => {
+    try {
+      // Validate input
+      const errors = validationResult(req); // Collects any validation errors from the chains above.
+      if (!errors.isEmpty()) { // Checks if there were any validation errors.
+        return next(new BadRequestError(errors.array()[0].msg)); // If errors, pass the first error message to the error handler.
+      }
+
+      // Verify user authentication and authorization
+      if (!req.user?.user_id || req.user?.role !== 'Recruiter') {
+        return next(new BadRequestError('Unauthorized: Only recruiters can create jobs'));
+      }
+
+      const jobData = {
+
+        title: req.body.title, // Value is already trimmed and escaped by express-validator
+        description: req.body.description, // Value is already trimmed and escaped by express-validator
+        location: req.body.location, // Value is already trimmed and escaped by express-validator
+        job_type: req.body.job_type, // Value is already trimmed by express-validator
+        recruiter_id: req.user.user_id
+      };
+  
+
+      const newJobPosting = await JobPosting.create(jobData);
+
+      if (!newJobPosting) {
+        throw new Error('Failed to create job posting');
+      }
+
+      res.status(201).json({
+        message: 'Job posting created successfully',
+        job: newJobPosting
+      });
+
+    } catch (error) {
+      console.error('Error creating job posting:', error);
+      next(new BadRequestError('Unable to create job posting'));
+    }
   }
-};
+];
 
-// =================== 2. View specific Job details ===================
-exports.getJobById = async (req, res, next) => {
-  try {
-    const { jobId } = req.params;
+// =================== 2. Recruiter: Update Job Posting by ID ===================
+exports.updateJob = [
+  // Validate URL parameter
+  param('jobId') // Targets the 'jobId' parameter in the URL path (e.g., /jobs/:jobId)
+    .isInt({ min: 1 }) // Validates that 'jobId' is an integer and its value is at least 1.
+    .withMessage('Invalid job ID') // Custom error message if 'jobId' is not a valid integer >= 1.
+    .toInt(), // Sanitizer: converts the validated 'jobId' string from the URL param into an integer.
 
-    // Validate jobId format (basic validation)
-    if (isNaN(parseInt(jobId, 10))) {
-        return next(new BadRequestError('Invalid Job ID format.'));
+  // Validate body fields
+  body('title')
+    .isString()
+    .isLength({ min: 3, max: 100 })
+    .matches(/^[a-zA-Z0-9\s\-_.,!?()]+$/)
+    .withMessage('Title must be 3-100 characters and contain only valid characters')
+    .trim()
+    .escape(), 
+
+  body('description')
+    .isString()
+    .isLength({ min: 10, max: 1000 })
+    .withMessage('Description must be 10-1000 characters')
+    .trim()
+    .escape(), 
+
+  body('location')
+    .isString()
+    .isLength({ min: 2, max: 100 })
+    .matches(/^[a-zA-Z0-9\s\-_,()]+$/)
+    .withMessage('Location must be 2-100 characters and contain only valid characters')
+    .trim()
+    .escape(), 
+
+  body('job_type')
+    .isIn(['FullTime', 'PartTime', 'Contract'])
+    .withMessage('Invalid job type')
+    .trim(), 
+
+  async (req, res, next) => {
+    try {
+      // Validate input
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return next(new BadRequestError(errors.array()[0].msg));
+      }
+
+      const { jobId } = req.params; // This is now an integer thanks to .toInt()
+
+      // Corrected authorization logic:
+      if (!req.user?.user_id || req.user?.role !== 'Recruiter') {
+        return next(new BadRequestError('Unauthorized: Only recruiters can update jobs'));
+      }
+
+      const existingJob = await JobPosting.findById(jobId);
+
+      if (!existingJob) {
+        return next(new NotFoundError('Job posting not found'));
+      }
+
+      if (existingJob.recruiter_id !== req.user.user_id) {
+        return next(new BadRequestError('Unauthorized: You can only update your own job postings'));
+      }
+
+      // Prepare update data. Values from req.body are already sanitized by express-validator.
+      const updateData = {};
+      if (req.body.title) updateData.title = req.body.title; // Already trimmed and escaped
+      if (req.body.description) updateData.description = req.body.description; // Already trimmed and escaped
+      if (req.body.location) updateData.location = req.body.location; // Already trimmed and escaped
+      if (req.body.job_type) updateData.job_type = req.body.job_type; // Already trimmed
+
+      // Use model to update
+      const updated = await JobPosting.update(jobId, updateData);
+
+      if (!updated) {
+        throw new Error('Failed to update job posting'); // Or use a more specific error if update returns 0 rows affected
+      }
+
+      res.status(200).json({
+        message: 'Job posting updated successfully',
+        jobId: jobId
+      });
+
+    } catch (error) {
+      console.error('Error updating job:', error);
+      next(new BadRequestError('Unable to update job posting'));
     }
-
-    // Use the new model method
-    const jobPosting = await jobPostingModel.findOpenJobDetailsById(jobId);
-
-    if (!jobPosting) {
-      // The model method already filters for 'Open' status.
-      return next(new NotFoundError('Job posting not found or is not currently open.'));
-    }
-
-    res.status(200).json(jobPosting);
-  } catch (error) {
-    console.error('Error fetching job details by ID:', error);
-    next(new BadRequestError('An error occurred while fetching job details.'));
   }
-};
+];
 
-// =================== 3. Recruiter: Create Job Posting (with Spam Check) ===================
-exports.createJob = async (req, res, next) => {
-  try {
-    const { title, description, location, job_type } = req.body; // Use job_type consistently
-    // const jobType = req.body.job_type || req.body.type; // Keep if frontend might send 'type'
-    
-    // Authentication and role check should be handled by middleware before this controller action
-    if (!req.user || !req.user.userId) {
-      // This check is a safeguard, middleware should catch it first
-      return next(new BadRequestError('User authentication required.'));
-    }
-    const recruiter_id = req.user.userId;
-    if (!title || !description || !location || !job_type) {
-      return next(new BadRequestError('All fields are required: title, description, location, and job_type.'));
-    }
-
-    // Normalize or trim inputs if necessary before checking for duplicates
-    const normalizedTitle = title.trim();
-    const normalizedDescription = description.trim(); // Basic trim, consider more advanced normalization
-
-    // Check for existing identical job by this recruiter
-    const existingJob = await jobPostingModel.findExistingJobByContent(
-      normalizedTitle,
-      normalizedDescription,
-      recruiter_id
-    );
-
-    if (existingJob) {
-      return next(new BadRequestError(
-        'You have already posted an identical job (same title and description). Please post a new unique job or update the existing one.'
-      ));
-    }
-
-    const jobData = {
-      title: normalizedTitle,
-      description: normalizedDescription,
-        location, 
-      job_type, // Use the consistent field name
-      recruiter_id,
-      // status: 'Open', // Model's create method handles default status
-      // created_at, updated_at, posting_date are handled by model's create method
-};
-
-    const newJobPosting = await jobPostingModel.create(jobData);
-
-    res.status(201).json(newJobPosting);
-  } catch (error) {
-    console.error('Error creating job posting:', error);
-    next(new BadRequestError('Unable to create job posting: ' + error.message));
-  }
-};
-
-// =================== 4. Recruiter: View Their Job Postings ===================
+// =================== 3. Recruiter: View Their Job Postings ===================
 exports.getRecruiterJobs = async (req, res, next) => {
   try {
-    if (!req.user || !req.user.userId) {
-      return next(new BadRequestError('User authentication required.'));
-    }
-    const recruiter_id = req.user.userId;
-    const { status } = req.query; // Allow filtering by status
+    // Use consistent user ID property
+    const recruiter_id = req.user.user_id;
 
-    const jobPostings = await jobPostingModel.findByRecruiterId(recruiter_id, { status });
+    const { status } = req.query;
+
+    // Use the model method for fetching recruiter's jobs
+    const jobPostings = await JobPosting.findByRecruiterId(recruiter_id, { status });
+
+    // Always return an array (empty if none)
     res.status(200).json(jobPostings);
   } catch (error) {
     console.error('Error fetching recruiter jobs:', error);
@@ -121,45 +201,7 @@ exports.getRecruiterJobs = async (req, res, next) => {
   }
 };
 
-// =================== 5. Recruiter: Edit Job Posting ===================
-exports.updateJob = async (req, res, next) => {
-  try {
-    const { jobId: job_posting_id } = req.params;
-    const { title, description, location, job_type } = req.body;
-     if (!req.user || !req.user.userId) {
-      return next(new BadRequestError('User authentication required.'));
-    }
-    const recruiter_id = req.user.userId;
-
-    const updateFields = {};
-    if (title !== undefined) updateFields.title = title.trim();
-    if (description !== undefined) updateFields.description = description.trim();
-    if (location !== undefined) updateFields.location = location;
-    if (job_type !== undefined) updateFields.job_type = job_type;
-
-
-    if (Object.keys(updateFields).length === 0) {
-      return next(new BadRequestError('No fields provided for update.'));
-    }
-
-    // Optional: If title/description are being updated, check if the new combination
-    // would create a duplicate with *another* existing job by this recruiter.
-    // This is more complex and might be overkill depending on requirements.
-    // For now, we only prevent creating a new job that's identical to an existing one.
-
-    const updatedCount = await jobPostingModel.update(job_posting_id, recruiter_id, updateFields);
-
-    if (updatedCount === 0) {
-      return next(new NotFoundError('Job posting not found, you are not authorized to edit it, or update failed.'));
-    }
-    res.status(200).json({ message: 'Job posting updated successfully.' });
-  } catch (error) {
-    console.error('Error updating job:', error);
-    next(new BadRequestError('Unable to update job posting: ' + error.message));
-    }
-};
-
-// =================== 6. Recruiter: Close Job Posting ===================
+// =================== 4. Recruiter: Close Job Posting ===================
 exports.closeJob = async (req, res, next) => {
   try {
     const { jobId: job_posting_id } = req.params;
@@ -190,7 +232,7 @@ exports.closeJob = async (req, res, next) => {
   }
 };
 
-// =================== 7. Recruiter: View Candidates ===================
+// =================== 5. Recruiter: View Candidates ===================
 exports.getCandidates = async (req, res, next) => {
   try {
     const { jobId: job_posting_id } = req.params;
@@ -214,7 +256,7 @@ exports.getCandidates = async (req, res, next) => {
   }
 };
 
-// =================== 8. Recruiter: Update Candidate Status ===================
+// =================== 6. Recruiter: Update Candidate Status ===================
 exports.updateCandidateStatus = async (req, res, next) => {
   try {
     const { applicationId } = req.params;
@@ -248,12 +290,19 @@ exports.updateCandidateStatus = async (req, res, next) => {
     }
 };
 
-// =================== 9. Recruiter: Delete Job Posting ===================
+// =================== 7. Recruiter: Delete Job Posting at DELETE /api/recruiter/job-postings/:jobId ===================
 exports.deleteJob = async (req, res, next) => {
   try {
-    const { jobId: job_posting_id } = req.params;
-    if (!req.user || !req.user.userId) {
-      return next(new BadRequestError('User authentication required.'));
+    const { jobId } = req.params;
+    const { userId } = req.user; 
+
+    // Validate job posting and ownership
+    const job = await db('job_postings').where('job_posting_id', jobId).first();
+    if (!job) {
+      return next(new NotFoundError('Job posting not found'));
+    }
+    if (job.recruiter_id !== userId) {
+      return next(new BadRequestError('Unauthorized: You can only delete your own job postings'));
     }
     const recruiter_id = req.user.userId;
 

@@ -1,10 +1,9 @@
 # API Documentation
 
-Nhìn chung thì phần dữ liệu JSON có gì sẽ do các attributes của tables tương ứng trong database quyết định, nên mn đừng quan tâm quá đến request body ở đây nha.
+## Note
+- Candidate = Job-seeker
+- Job = JobPosting 
 
-## Thống nhất tên gọi:
-- Candidate là Job-seeker
-- Job là JobPosting trong class.md của Duy hiện tại, là 1 tin tuyển dụng xác định bởi jobId
 ## Authentication & Job Seeker Management
 
 ### `POST /api/auth/register`
@@ -15,13 +14,12 @@ Nhìn chung thì phần dữ liệu JSON có gì sẽ do các attributes của t
   { "username": "string",
     "email": "string",   
     "password": "string",
-     "role": "Candidate"/"Recruiter"
   }
   ```
 - **Response**:
   - **Success**: 201 Created
   - **Failure**: 400 Bad Request (if missing required fields)
-  
+
 ---
 
 ### `POST /api/auth/login`
@@ -30,7 +28,7 @@ Nhìn chung thì phần dữ liệu JSON có gì sẽ do các attributes của t
 - **Request Body**:
   ```json
   {
-    "email"/"username": "string", // tuy code
+    "email": "string", // or "username": "string"
     "password": "string"
   }
   ```
@@ -49,17 +47,15 @@ Nhìn chung thì phần dữ liệu JSON có gì sẽ do các attributes của t
 
 ---
 
-### `PUT /api/profile/userId`
+### `PUT /api/profile/:userId`
 - **Use Case**: UC-S1: Register/Manage Account
 - **Description**: Allows a logged-in user to update their profile information (e.g., resume, contact details, skills).
 - **Request Body**: differs between Candidate and Recruiter
-
 - **Response**:
   - **Success**: 200 OK
   - **Failure**: 400 Bad Request (missing required fields)
 
 ---
-
 
 ###  `GET /api/jobs`
 - **Use Case**: UC-S2: Search/View Jobs
@@ -67,32 +63,41 @@ Nhìn chung thì phần dữ liệu JSON có gì sẽ do các attributes của t
 - **Query Parameters**:
   - `title`: (optional) Filter by job title
   - `location`: (optional) Filter by job location
-  - `type`: (optional) Filter by job type (e.g., full-time, part-time)
+  - `type`: (optional) Filter by job type (`FullTime`, `PartTime`, `Contract`)
+  - `page`: (optional) Page number (default: 1)
+  - `limit`: (optional) Items per page (default: 12)
 - **Response**:
   - **Success**: 200 OK (returns a list of job postings)
   - **Failure**: 400 Bad Request (invalid query parameters)
 
 ---
 
-### ` GET /api/jobs/apply/{jobId}`
+### `GET /api/jobs/:jobId`
+- **Use Case**: UC-S2: View Job Detail
+- **Description**: Allows users to view details of a specific job posting.
+- **Response**:
+  - **Success**: 200 OK (returns job detail)
+  - **Failure**: 404 Not Found (invalid job posting ID)
+
+---
+
+### `POST /api/jobs/apply/:jobId`
 - **Use Case**: UC-S3: Apply for Job
 - **Description**: Allows a logged-in Job Seeker to apply for a specific job.
-- **Request Body**:
-  ```json
-  {
-    "jobId": "string",  //should it be a long integer?
-    "resume": "file" //CV
-  }
-  ```
+- **Request**: `multipart/form-data`
+  - **Fields**:
+    - `resume`: file (PDF, DOC, DOCX, max 5MB)
+- **Headers**:
+  - `Authorization: Bearer <token>`
 - **Response**:
   - **Success**: 201 Created (application submitted successfully)
-  - **Failure**: 400 Bad Request (invalid job posting ID)
+  - **Failure**: 400 Bad Request (invalid job posting ID or file)
 
 ---
 
 ## Recruiter Management
 
-### `POST /api/jobs`
+### `POST /api/recruiter/job-postings`
 - **Use Case**: UC-R1: Manage Job Postings
 - **Description**: Allows a Recruiter to create a new job posting.
 - **Request Body**:
@@ -101,9 +106,11 @@ Nhìn chung thì phần dữ liệu JSON có gì sẽ do các attributes của t
     "title": "string",
     "description": "string",
     "location": "string",
-    "type": "string", 
+    "job_type": "FullTime" | "PartTime" | "Contract"
   }
   ```
+- **Headers**:
+  - `Authorization: Bearer <token>`
 - **Response**:
   - **Success**: 201 Created (job posting created)
   - **Failure**: 400 Bad Request (invalid data)
@@ -113,13 +120,15 @@ Nhìn chung thì phần dữ liệu JSON có gì sẽ do các attributes của t
 ### `GET /api/recruiter/job-postings`
 - **Use Case**: UC-R1: Manage Job Postings
 - **Description**: Allows a Recruiter to view their active and inactive job postings.
+- **Headers**:
+  - `Authorization: Bearer <token>`
 - **Response**:
   - **Success**: 200 OK (returns a list of job postings)
   - **Failure**: 400 Bad Request (if no job postings exist)
 
 ---
 
-### `PUT /api/recruiter/job-postings/{jobId}`
+### `PUT /api/recruiter/job-postings/:jobId`
 - **Use Case**: UC-R1: Manage Job Postings
 - **Description**: Allows a Recruiter to edit an existing job posting.
 - **Request Body**:
@@ -128,36 +137,51 @@ Nhìn chung thì phần dữ liệu JSON có gì sẽ do các attributes của t
     "title": "string",
     "description": "string",
     "location": "string",
-    "type": "string",
+    "job_type": "FullTime" | "PartTime" | "Contract"
   }
   ```
+- **Headers**:
+  - `Authorization: Bearer <token>`
 - **Response**:
   - **Success**: 200 OK (job posting updated)
   - **Failure**: 400 Bad Request (invalid job posting ID)
 
 ---
 
-### `DELETE /api/recruiter/job-postings/{jobId}/close`
+### `POST /api/recruiter/job-postings/:jobId/close`
 - **Use Case**: UC-R1: Manage Job Postings
-- **Description**: Allows a Recruiter to delete a job posting.
+- **Description**: Allows a Recruiter to close a job posting.
+- **Headers**:
+  - `Authorization: Bearer <token>`
 - **Response**:
   - **Success**: 200 OK (job posting closed)
   - **Failure**: 400 Bad Request (invalid job posting ID)
 
 ---
 
-### `GET /api/recruiter/{jobId}/candidates`
+### `DELETE /api/recruiter/job-postings/:jobId`
+- **Use Case**: UC-R1: Manage Job Postings
+- **Description**: Allows a Recruiter to delete a job posting.
+- **Headers**:
+  - `Authorization: Bearer <token>`
+- **Response**:
+  - **Success**: 200 OK (job posting deleted)
+  - **Failure**: 400 Bad Request (invalid job posting ID)
+
+---
+
+### `GET /api/recruiter/job-postings/:jobId/candidates`
 - **Use Case**: UC-R2: Screen Candidates
 - **Description**: Allows a Recruiter to view the list of applicants for a job posting they manage.
-- **Query Parameters**:
-  - `jobId`: The ID of the job posting for which the recruiter wants to see applicants.
+- **Headers**:
+  - `Authorization: Bearer <token>`
 - **Response**:
   - **Success**: 200 OK (returns a list of applicants)
   - **Failure**: 400 Bad Request (invalid job posting ID)
 
 ---
 
-### `PUT /api/recruiter/candidates/{candidateId}/status`
+### `PUT /api/recruiter/applications/:applicationId/status`
 - **Use Case**: UC-R2: Screen Candidates
 - **Description**: Allows a Recruiter to change the status of a candidate’s application (e.g., New, Under Review, Shortlisted, Rejected).
 - **Request Body**:
@@ -166,9 +190,11 @@ Nhìn chung thì phần dữ liệu JSON có gì sẽ do các attributes của t
     "status": "string"
   }
   ```
+- **Headers**:
+  - `Authorization: Bearer <token>`
 - **Response**:
   - **Success**: 200 OK (status updated)
-  - **Failure**: 400 Bad Request (invalid candidate ID or status)
+  - **Failure**: 400 Bad Request (invalid application ID or status)
 
 ---
 
@@ -184,6 +210,8 @@ Nhìn chung thì phần dữ liệu JSON có gì sẽ do các attributes của t
     "interviewer": "string"
   }
   ```
+- **Headers**:
+  - `Authorization: Bearer <token>`
 - **Response**:
   - **Success**: 201 Created (interview scheduled)
   - **Failure**: 400 Bad Request (invalid data)
@@ -193,6 +221,8 @@ Nhìn chung thì phần dữ liệu JSON có gì sẽ do các attributes của t
 ### `GET /api/recruiter/dashboard`
 - **Use Case**: UC-R4: View Recruiter Dashboard
 - **Description**: Allows a Recruiter to view a dashboard with their active job postings, applicant count, and scheduled interviews.
+- **Headers**:
+  - `Authorization: Bearer <token>`
 - **Response**:
   - **Success**: 200 OK (returns dashboard data)
   - **Failure**: 400 Bad Request (if no data available)
@@ -204,14 +234,17 @@ Nhìn chung thì phần dữ liệu JSON có gì sẽ do các attributes của t
 ### `GET /api/admin/users`
 - **Use Case**: UC-A1: View User Accounts
 - **Description**: Allows an Administrator to view the list of existing accounts.
+- **Headers**:
+  - `Authorization: Bearer <token>`
 - **Response**:
   - **Success**: 200 OK (returns list of recruiters)
   - **Failure**: 400 Bad Request (if no recruiters exist)
 
-
-### `DELETE /api/admin/users/{userId}`
+### `DELETE /api/admin/users/:userId`
 - **Use Case**: UC-A1: Manage Recruiter Accounts
 - **Description**: Allows an Administrator to disable or delete a Recruiter account.
+- **Headers**:
+  - `Authorization: Bearer <token>`
 - **Response**:
   - **Success**: 200 OK (account deleted or disabled)
   - **Failure**: 400 Bad Request (invalid recruiter ID)
