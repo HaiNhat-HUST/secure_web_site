@@ -24,8 +24,7 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
-
-    // Validate password match
+    //Validate password match
     if (formData.password !== formData.confirmPassword) {
       return setError("Passwords do not match");
     }
@@ -42,10 +41,14 @@ const Register = () => {
       if (result.success) {
         navigate("/dashboard");
       } else {
-        setError(result.error || "Registration failed");
+        setError(result.error || "Registration failed. Please try again.");
       }
     } catch (err) {
-      setError(err.message || "Registration failed");
+      if (err.message.includes('CSRF')) {
+        setError("Security error: Unable to verify request. Please refresh and try again.");
+      } else {
+        setError(err.message || "Registration failed. Please try again.");
+      }
       console.error("Registration error:", err);
     } finally {
       setLoading(false);

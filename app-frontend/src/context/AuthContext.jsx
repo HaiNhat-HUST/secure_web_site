@@ -11,8 +11,49 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
+  // Fetch CSRF token
+  const fetchCsrfToken = async (endpoint) => {
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_URL}${endpoint}`, {
+        method: 'GET',
+        credentials: 'include',
+      });
+      if (!response.ok) {
+        throw new Error(`HTTP error: ${response.status} for ${endpoint}`);
+      }
+      const data = await response.json();
+      if (!data.csrfToken) {
+        throw new Error(`CSRF token not found in ${endpoint} response`);
+      }
+      return data.csrfToken;
+    } catch (error) {
+      console.error(`Failed to fetch CSRF token from ${endpoint}:`, error);
+      throw new Error('Unable to fetch CSRF token');
+    }
+  };
+
+  // Fetch with CSRF token
+  const fetchWithCsrf = async (url, options = {}) => {
+    try {
+      const csrfToken = await fetchCsrfToken('/auth/login');
+      const headers = {
+        'Content-Type': 'application/json',
+        'X-CSRF-Token': csrfToken,
+        ...options.headers,
+      };
+  
+      return fetch(url, {
+        ...options,
+        headers,
+        credentials: 'include',
+      });
+    } catch (error) {
+      console.error('CSRF fetch error:', error);
+      throw error;
+    }
+  };
+
   useEffect(() => {
-    // Check for token on initial load
     const storedToken = localStorage.getItem('token');
     if (storedToken) {
       setToken(storedToken);
@@ -21,7 +62,6 @@ export const AuthProvider = ({ children }) => {
       setLoading(false);
     }
 
-    // Check if we have a token in the URL (callback from OAuth)
     const query = new URLSearchParams(window.location.search);
     const urlToken = query.get('token');
     
@@ -29,7 +69,6 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', urlToken);
       setToken(urlToken);
       fetchCurrentUser(urlToken);
-      // Clear the token from URL
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
@@ -49,10 +88,9 @@ export const AuthProvider = ({ children }) => {
 
       if (response.ok) {
         const userData = await response.json();
-        console.log("Get user data: ", userData)
+        console.log("Get user data: ", userData);
         setCurrentUser(userData);
       } else {
-        // Token might be invalid or expired
         logout();
       }
     } catch (error) {
@@ -66,11 +104,9 @@ export const AuthProvider = ({ children }) => {
   const login = async (identifier, password) => {
     try {
       setLoading(true);
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/login`, {
+      const response = await fetchWithCsrf(`${import.meta.env.VITE_API_URL}/auth/login`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ identifier, password }),
-        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -94,11 +130,9 @@ export const AuthProvider = ({ children }) => {
   const register = async (userData) => {
     try {
       setLoading(true);
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/register`, {
+      const response = await fetchWithCsrf(`${import.meta.env.VITE_API_URL}/auth/register`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(userData),
-        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -121,7 +155,6 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      // Call the backend logout endpoint
       await fetch(`${import.meta.env.VITE_API_URL}/auth/logout`, {
         method: 'GET',
         credentials: 'include'
@@ -129,7 +162,6 @@ export const AuthProvider = ({ children }) => {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      // Clear local storage and state regardless of server response
       localStorage.removeItem('token');
       setToken(null);
       setCurrentUser(null);
@@ -144,14 +176,12 @@ export const AuthProvider = ({ children }) => {
   const selectRole = async (role) => {
     try {
       setLoading(true);
-      const response = await fetch(`${import.meta.env.VITE_API_URL}/auth/select-role`, {
+      const response = await fetchWithCsrf(`${import.meta.env.VITE_API_URL}/auth/select-role`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({ role }),
-        credentials: 'include'
       });
 
       if (!response.ok) {
@@ -192,4 +222,4 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
-// export default AuthContext; 
+export default AuthProvider;

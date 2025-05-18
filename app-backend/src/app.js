@@ -6,7 +6,8 @@ const morgan = require('morgan');
 const session = require('express-session');
 const passport = require('./config/passport');
 const path = require('path');
-
+const csrf = require('csurf');
+const cookieParser = require('cookie-parser');
 // Import routes
 const authRoutes = require('./routes/authRoutes');
 const jobRoutes = require('./routes/jobRoutes');
@@ -34,6 +35,7 @@ app.use(helmet({
   frameguard: {
     action: 'deny' // Prevents the  site from being embedded in an iframe
   },
+
   hsts: {
     maxAge: 31536000, // 1 year in seconds
     includeSubDomains: true, // Apply to all subdomains
@@ -43,6 +45,7 @@ app.use(helmet({
   referrerPolicy: { policy: 'strict-origin-when-cross-origin' } // Referrer policy for better privacy
 }));
 
+app.use(cookieParser()); // Parse cookies
 app.use(morgan('dev')); // Logging
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
@@ -57,14 +60,15 @@ app.use(cors({
   credentials: true
 }));
 
-// Session setup for Passport
+// Session setup for Passport and CSRF
 app.use(session({
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
   cookie: {
     secure: process.env.NODE_ENV === 'production', // Use secure cookies in production
-    httpOnly: true, // Prevents client-side JS from reading the cookie
+    httpOnly: true,
+    sameSite: 'strict', // Prevents CSRF by restricting cross-site cookie sending
     maxAge: 24 * 60 * 60 * 1000 // 24 hours
   }
 }));
@@ -73,6 +77,18 @@ app.use(session({
 app.use(passport.initialize());
 app.use(passport.session());
 
+// Global CSRF protection for mutating requests
+const csrfProtection = csrf({ cookie: false });
+app.use((req, res, next) => {
+  if (['GET', 'HEAD', 'OPTIONS'].includes(req.method)) {
+    return next();
+  }
+  if (req.path === '/auth/google' || req.path === '/auth/google/callback') {
+    return next();
+  }
+  csrfProtection(req, res, next);
+});
+
 // Routes
 const API_PREFIX = '/api';
 const { authenticateJWT, hasRoleAssigned } = require('./middleware/authMiddleware');
@@ -80,13 +96,12 @@ const { authenticateJWT, hasRoleAssigned } = require('./middleware/authMiddlewar
 // Public routes
 app.use('/auth', authRoutes);
 app.use(passwordRecoveryRoutes);
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(path.join(__dirname, 'Uploads')));
 
-// Protected routes - using job routes correctly
+// Protected routes
 app.use(API_PREFIX, jobRoutes);
-
 app.use(`${API_PREFIX}/profiles`, authenticateJWT, hasRoleAssigned, profileRoutes);
-app.use('/api/dashboard',dashboardRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {
@@ -99,6 +114,9 @@ app.get(API_PREFIX, (req, res) => {
 
 // Error handling middleware
 app.use((err, req, res, next) => {
+  if (err.code === 'EBADCSRFTOKEN') {
+    return res.status(403).json({ message: 'Invalid CSRF token' });
+  }
   console.error(err.stack);
   res.status(err.statusCode || 500).json({
     message: err.message || 'Internal Server Error',
@@ -107,4 +125,3 @@ app.use((err, req, res, next) => {
 });
 
 module.exports = app;
-

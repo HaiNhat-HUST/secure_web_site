@@ -1,5 +1,8 @@
 {
   "devDependencies": {
     "express-rate-limit": "^7.5.0"
+  },
+  "dependencies": {
+    "csurf": "^1.11.0"
   }
 }
