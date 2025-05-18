@@ -1,5 +1,5 @@
 import { Routes, Route } from "react-router-dom";
-import Home from "../pages/JobNewsfeed";
+import Home from "../pages/Home";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import MainLayout from "../layouts/MainLayout";
@@ -12,21 +12,21 @@ import ForgotPassword from '../pages/ForgotPassword';
 import ResetPassword from '../pages/ResetPassword';
 import JobNewsfeed from '../pages/JobNewsfeed';
 import JobDetail from '../pages/JobDetail';
+import CreateJobPosting from '../pages/CreateJobPosting';
 
 const AppRoutes = () => {
   return (
     <Routes>
       {/* Public route */}
       <Route element={<MainLayout />}>
-        <Route path="/" element={<JobNewsfeed />} />
+        <Route path="/" element={<Home />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
         <Route path="/select-role" element={<RoleSelection />} />
         <Route path="/auth/callback" element={<AuthCallback />} />
-        <Route path="/newfeeds" element={<JobNewsfeed />} />
-        <Route path="/jobs/:jobId" element={<JobDetail />} />
+        
       </Route>
 
       {/* private route - need authentication */}
@@ -34,7 +34,9 @@ const AppRoutes = () => {
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile" element={<Profile />} />
-          {/*<Route path="/profile/:userId" element={<Profile />} />*/}
+          <Route path="/recruiter/job-postings/create" element={<CreateJobPosting />} />
+          <Route path="/newfeed" element={<JobNewsfeed />} />
+          <Route path="/jobs/:jobId" element={<JobDetail />} />
         </Route>
       </Route>
 

@@ -10,7 +10,7 @@ const transporter = nodemailer.createTransport({
 
 const sendRecoveryEmail = async (email, link) => {
   const mailOptions = {
-    from: '"Exploymee" <no-reply@employmee.com>',
+    from: '"Employmee" <no-reply@employmee.com>',
     to: email,
     subject: 'Reset your password',
     html: `

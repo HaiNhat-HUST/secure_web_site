@@ -67,14 +67,12 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        // Check if user already exists
         let user = await UserModel.findByGoogleId(profile.id);
         
         if (user) {
           return done(null, user);
         }
         
-        // If user doesn't exist, create new user
         user = await UserModel.createWithGoogle(profile);
         return done(null, user);
       } catch (error) {

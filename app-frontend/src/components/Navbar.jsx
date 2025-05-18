@@ -13,8 +13,8 @@ const Navbar = () => {
         
         <div className="flex items-center space-x-4">
           {/* Public links */}
-          <Link to="/" className="hover:text-gray-300">
-            Home
+          <Link to="/newfeed" className="hover:text-gray-300">
+            New Feed
           </Link>
           
           {/* Auth-dependent links */}

@@ -50,7 +50,6 @@ const hasRole = (roles) => {
     if (roles.includes(req.user.role)) {
       return next();
     }
-    
     return res.status(403).json({ message: 'Forbidden. Insufficient permissions.' });
   };
 };

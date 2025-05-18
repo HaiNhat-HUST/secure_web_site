@@ -1,5 +1,5 @@
-// src/services/api.js
-const API_BASE_URL = import.meta.env.VITE_API_URL;
+// api/serveAPI.js (example structure)
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
 
 export const fetchFromAPI = async (endpoint, token, options = {}) => {
   const url = `${API_BASE_URL}${endpoint}`;
@@ -7,30 +7,27 @@ export const fetchFromAPI = async (endpoint, token, options = {}) => {
     'Content-Type': 'application/json',
     ...options.headers,
   };
-
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
   try {
-    const response = await fetch(url, {
-      ...options,
-      headers,
-      credentials: 'include', // Important if your backend uses cookies/sessions
-    });
-
+    const response = await fetch(url, { ...options, headers });
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({ message: response.statusText }));
-      console.error(`API Error (${response.status}) on ${endpoint}:`, errorData);
-      throw new Error(errorData.message || `Request failed with status ${response.status}`);
+      // Throw an error object that includes status and message for better handling
+      const error = new Error(errorData.message || `API Error: ${response.status}`);
+      error.status = response.status;
+      error.data = errorData;
+      throw error;
     }
-    // Handle cases where response might be empty (e.g., 204 No Content)
+    // For DELETE 204 No Content, response.json() will fail
     if (response.status === 204) {
-        return null; 
+        return { data: null, message: "Operation successful (No Content)" };
     }
-    return response.json();
+    return response.json(); // Assumes API always returns JSON
   } catch (error) {
-    console.error(`Network or other error on ${endpoint}:`, error);
+    console.error(`Error fetching from API endpoint ${endpoint}:`, error);
     throw error; // Re-throw to be caught by the calling component
   }
 };
