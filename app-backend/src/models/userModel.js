@@ -144,7 +144,7 @@ module.exports = {
     return db('education_history')
       .where({ education_id: educationId, user_id: user_id })
       .first();
-  }
+  },
 
   async updatePassword(email, password_hash){
      return db(TABLE_NAME).where({ email }).update({password_hash, updated_at: new Date()});

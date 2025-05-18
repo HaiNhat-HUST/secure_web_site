@@ -12,6 +12,7 @@ const authRoutes = require('./routes/authRoutes');
 const jobRoutes = require('./routes/jobRoutes');
 const profileRoutes = require('./routes/profileRoutes');
 const passwordRecoveryRoutes = require('./routes/passwordRecoveryRoutes');
+const dashboardRoutes = require('../src/routes/dashboardRoutes');
 
 const app = express();
 
@@ -85,6 +86,7 @@ app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 app.use(API_PREFIX, jobRoutes);
 
 app.use(`${API_PREFIX}/profiles`, authenticateJWT, hasRoleAssigned, profileRoutes);
+app.use('/api/dashboard',dashboardRoutes);
 
 // Health check route
 app.get('/health', (req, res) => {
