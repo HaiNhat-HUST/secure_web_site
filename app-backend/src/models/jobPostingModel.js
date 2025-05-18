@@ -13,7 +13,7 @@ module.exports = {
     const newJobData = {
       ...jobData, // Expects recruiter_id, title, description, job_type
       status: jobData.status || 'Open',
-      posting_date: jobData.posting_date || new Date(), // Add posting_date if it's a separate field
+      // posting_date: jobData.posting_date || new Date(), // Add posting_date if it's a separate field
       created_at: new Date(),
       updated_at: new Date(),
     };

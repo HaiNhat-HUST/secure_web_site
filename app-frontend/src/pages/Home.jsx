@@ -14,7 +14,7 @@ export default function Home() {
           </p>
           <div className="flex gap-4">
             <Link
-              to="/newfeeds"
+              to="/newfeed"
               className="bg-blue-400 text-blue-800 px-6 py-3 rounded-full font-semibold text-lg shadow hover:bg-yellow-500 transition"
             >
               Bắt đầu tìm kiếm
